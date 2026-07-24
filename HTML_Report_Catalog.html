@@ -1,0 +1,1036 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qware 報表總目錄 (Report Catalog)</title>
+    <!-- IP Allowlist: internal network only -->
+    <style>html { visibility: hidden; }</style>
+    <script>
+        (function () {
+            var ALLOWED = [
+                '211.75.181.109', '211.75.181.110',
+                '220.130.6.196',  '220.130.6.197',  '220.130.6.198',
+                '220.130.134.238','220.130.134.239', '220.130.134.240',
+                '133.149.194.24'
+            ];
+
+            function deny(ip) {
+                document.documentElement.style.visibility = 'visible';
+                document.body.style.cssText = 'margin:0;padding:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;';
+                document.body.innerHTML =
+                    '<div style="text-align:center;font-family:Outfit,sans-serif;padding:40px">' +
+                    '<div style="font-size:5rem;margin-bottom:20px">🔒</div>' +
+                    '<h1 style="color:#ef4444;font-size:2rem;margin:0 0 14px">存取被拒絕</h1>' +
+                    '<p style="color:#94a3b8;margin:0 0 8px">您目前的 IP 位址：' +
+                    '<code style="background:#1e293b;padding:2px 10px;border-radius:4px;color:#f472b6">' + ip + '</code></p>' +
+                    '<p style="color:#64748b;font-size:0.88rem">此頁面僅限內部網路存取 · Access restricted to internal network only</p>' +
+                    '</div>';
+            }
+
+            var timer = setTimeout(function () { deny('timeout'); }, 6000);
+
+            fetch('https://api.ipify.org?format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    clearTimeout(timer);
+                    if (ALLOWED.indexOf(d.ip) !== -1) {
+                        document.documentElement.style.visibility = 'visible';
+                    } else {
+                        deny(d.ip);
+                    }
+                })
+                .catch(function () {
+                    clearTimeout(timer);
+                    deny('unknown');
+                });
+        })();
+    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent-color: #42A5F5;
+            --accent-green: #4CAF50;
+            --accent-gold: #ffd700;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            color: var(--accent-color);
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            margin-bottom: 50px;
+        }
+
+        th,
+        td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background-color: #2c2c2c;
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-size: 1.1rem;
+            white-space: nowrap;
+        }
+
+        tr:hover {
+            background-color: #2a2a2a;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: #64b5f6;
+        }
+
+        .sys-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #121212;
+            margin-right: 8px;
+        }
+
+        .sys-a { background-color: var(--accent-gold); }
+        .sys-d { background-color: #26c6da; }
+        .sys-e { background-color: var(--accent-green); }
+        .sys-sys { background-color: #9e9e9e; }
+        .sys-other { background-color: #e91e63; }
+        .sys-unif { background-color: #f57c00; }
+        .sys-inv { background-color: #9c27b0; }
+        .sys-trv { background-color: #00bcd4; }
+
+        .table-name {
+            font-family: monospace;
+            background: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ff9800;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .update-time {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-family: 'Outfit';
+            white-space: nowrap;
+        }
+
+        .run-info {
+            margin-top: 5px;
+        }
+
+        .run-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+
+        .run-status.success {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .run-status.error {
+            background: rgba(244, 67, 54, 0.15);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+
+        .run-time {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            font-family: 'Outfit', monospace;
+            white-space: nowrap;
+        }
+
+        .spec-link {
+            font-size: 0.85rem;
+            color: #ffccbc;
+            border: 1px solid #ff5722;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .spec-link:hover {
+            background: #ff5722;
+            color: white;
+            text-decoration: none;
+        }
+        .sys-chk { background-color: #26c6da; }
+        .sys-sch { background-color: #7e57c2; }
+
+        /* ── Tab bar ─────────────────────────────────────── */
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .tab-btn {
+            background: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 24px;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-family: 'Outfit','Noto Sans TC',sans-serif;
+            font-size: 0.88rem;
+            font-weight: 500;
+            padding: 7px 18px;
+            transition: all 0.18s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { border-color: #42A5F5; color: #e0e0e0; }
+        .tab-btn.active {
+            background: #42A5F5;
+            border-color: #42A5F5;
+            color: #121212;
+            font-weight: 700;
+        }
+        .tab-btn.tab-dsys.active  { background:#26c6da; border-color:#26c6da; }
+        .tab-btn.tab-asys.active  { background:#ffd700; border-color:#ffd700; }
+        .tab-btn.tab-esys.active  { background:#4CAF50; border-color:#4CAF50; }
+        .tab-btn.tab-tools.active { background:#9c27b0; border-color:#9c27b0; color:#fff; }
+        .tab-count {
+            display: inline-block;
+            background: rgba(255,255,255,.15);
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 5px;
+            padding: 1px 7px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>📋 Qware 報表總目錄 (Report Catalog)</h1>
+    <p style="color:#888; font-size:0.85rem; margin:-6px 0 14px;">目錄維護規則見 <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_CATALOG.md" style="color:#42A5F5;" target="_blank">📄 REPORT_SPEC_CATALOG.md</a></p>
+
+    <div class="tab-bar" id="tabBar">
+        <button class="tab-btn active"     data-tab="all"       onclick="switchTab('all',this)">📋 全部</button>
+        <button class="tab-btn"            data-tab="dashboard" onclick="switchTab('dashboard',this)">🖥 主控台</button>
+        <button class="tab-btn tab-asys"   data-tab="asys"      onclick="switchTab('asys',this)">📊 A系統</button>
+        <button class="tab-btn tab-dsys"   data-tab="dsys"      onclick="switchTab('dsys',this)">🌐 流量 / D系統</button>
+        <button class="tab-btn tab-esys"   data-tab="esys"      onclick="switchTab('esys',this)">🛒 E系統</button>
+        <button class="tab-btn tab-tools"  data-tab="tools"     onclick="switchTab('tools',this)">🔧 工具 / 排程</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>編號</th>
+                <th>系統</th>
+                <th>更新時間</th>
+                <th>檔名 (超連結)</th>
+                <th>內容說明</th>
+                <th>視覺規範與功能組件</th>
+                <th>資料表 (Sources)</th>
+                <th>排程</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Section: Dashboards -->
+            <tr style="background: rgba(66, 165, 245, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: var(--accent-color);">📍 主控台與概覽儀表板</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/13 11:20</td>
+                <td><a href="report_index.html" target="_blank">report_index.html</a></td>
+                <td>A 系統報表導覽入口指標，包含年度趨勢與統計摘要（月份統計含電子票/紙票張數與占比）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_INDEX_DASHBOARD.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>每日 08:00（daily_update.bat）</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><span class="sys-badge sys-e">E系統</span></td>
+                <td class="update-time">2026/07/06 09:35</td>
+                <td><a href="E_report_index.html" target="_blank">E_report_index.html</a></td>
+                <td>E 系統報表主控台儀表板</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_E_INDEX_DASHBOARD.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data_Esys</span></td>
+                <td>每月一號 08:30</td>
+            </tr>
+
+            <tr>
+                <td>43</td>
+                <td><span class="sys-badge sys-other">封存</span></td>
+                <td class="update-time">2026/07/08 10:00</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2025/" target="_blank">report-archive-2025 (封存庫)</a></td>
+                <td>2025 年已結案報表封存庫（A/E 月報 10–12 月、啤酒節、櫻花季、李聖傑）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_ARCHIVE.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">—</span></td>
+                <td>結案後手動封存</td>
+            </tr>
+            <tr>
+                <td>44</td>
+                <td><span class="sys-badge sys-other">封存</span></td>
+                <td class="update-time">2026/07/08 10:00</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/" target="_blank">report-archive-2026 (封存庫)</a></td>
+                <td>2026 年已結案報表封存庫（E 月報 1–5 月、櫻花季、金唱片、韋禮安）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_ARCHIVE.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">—</span></td>
+                <td>結案後手動封存</td>
+            </tr>
+            <tr>
+                <td>46</td>
+                <td><span class="sys-badge sys-other">備份</span></td>
+                <td class="update-time">2026/07/13 10:05</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_BACKUP.md" target="_blank">REPORT_SPEC_BACKUP.md (備份計畫)</a></td>
+                <td>備份計畫：各類資料保護矩陣、排程定義 XML 匯出（<a href="https://github.com/lard23chen/NewReport/tree/main/scheduled_tasks_export" target="_blank">scheduled_tasks_export/</a>）、憑證/資料庫備份 SOP、新機器災難還原步驟、已知風險清單</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_BACKUP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">—</span></td>
+                <td>手動維護（排程異動時重匯 XML）</td>
+            </tr>
+
+            <!-- Section: A System Reports -->
+            <tr style="background: rgba(255, 215, 0, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: var(--accent-gold);">📊 A 系統 營業分析報告</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/13 12:05</td>
+                <td><a href="A_Qware_Revenue_Report_Daily.html" target="_blank">A_Qware_Revenue_Report_Daily.html</a></td>
+                <td>A 系統 每日營業快訊分析（每日交易統計與銷售排行均含電子票/紙票張數與占比）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_A_DAILY_REVENUE.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily</span></td>
+                <td>每日 08:00
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/03/27 08:04</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>45</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/23 08:30</td>
+                <td><a href="A_Qware_Revenue_Report_Weekly_20260716-20260722.html" target="_blank">A_Qware_Revenue_Report_Weekly_20260716-20260722.html</a></td>
+                <td>A 系統 週報分析（上週四～本週三，排除 B 開頭訂單）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_A_WEEKLY_REVENUE.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily</span></td>
+                <td>每週四 08:30
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/07/23 08:30</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>38</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/13 11:45</td>
+                <td><a href="A_Qware_Revenue_Report_2026年06月_分析報表.html" target="_blank">A_Qware_Revenue_Report_2026年06月.html</a></td>
+                <td>月度營業分析儀表板 (2026/06，排除B開頭訂單，銷售排行含電子票/紙票張數與占比)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_A.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>37</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/09 13:47</td>
+                <td><a href="A_Qware_Revenue_Report_2026年05月_分析報表.html" target="_blank">A_Qware_Revenue_Report_2026年05月.html</a></td>
+                <td>月度營業分析儀表板 (2026/05，排除B開頭訂單)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_A.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>36</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/09 13:47</td>
+                <td><a href="A_Qware_Revenue_Report_2026年04月_分析報表.html" target="_blank">A_Qware_Revenue_Report_2026年04月.html</a></td>
+                <td>月度營業分析儀表板 (2026/04，排除B開頭訂單)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_A.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/09 13:46</td>
+                <td><a href="A_Qware_Revenue_Report_2026年03月_分析報表.html" target="_blank">A_Qware_Revenue_Report_2026年03月.html</a></td>
+                <td>月度營業分析儀表板 (2026/03，排除B開頭訂單)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_A.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/09 13:46</td>
+                <td><a href="A_Qware_Revenue_Report_2026年02月_分析報表.html" target="_blank">A_Qware_Revenue_Report_2026年02月.html</a></td>
+                <td>月度營業分析儀表板 (2026/02，排除B開頭訂單)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_A.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/07/09 13:45</td>
+                <td><a href="A_Qware_Revenue_Report_2026年01月_分析報表.html" target="_blank">A_Qware_Revenue_Report_2026年01月.html</a></td>
+                <td>月度營業分析儀表板 (2026/01，排除B開頭訂單)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_A.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/03/11 15:26</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2025/A_Qware_Revenue_Report_2025年12月_分析報表.html" target="_blank">A_Qware_Revenue_Report_2025年12月.html</a></td>
+                <td>月度營業分析儀表板 (2025/12)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_A.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/03/11 15:26</td>
+                <td><a href="A_Qware_Sales_Refund_Comparison_2025-12_vs_2026-01.html" target="_blank">A_Qware_Sales_Refund_Comparison_...</a></td>
+                <td>跨月度銷售與退票對比分析</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_A_SALES_COMPARISON.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- Section: Project Specific -->
+            <tr style="background: rgba(245, 124, 0, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: #f57c00;">✨ 演唱會與專案深度評估</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/03/19 09:05</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/A_GoldenDisc_Report_2026-02-06.html" target="_blank">A_GoldenDisc_Report_2026-02-06.html</a></td>
+                <td>第40屆金唱片頒獎典禮 深度評估報表</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/03/11 15:26</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2025/A_SamLee_Report_2025_Taipei.html" target="_blank">A_SamLee_Report_2025_Taipei.html</a></td>
+                <td>李聖傑 2025 台北站 營業評估報告</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>11</td>
+                <td><span class="sys-badge sys-unif">統一獅</span></td>
+                <td class="update-time">2026/03/18 10:05</td>
+                <td><a href="A_UniformLions_Order_Analysis_20260309.html" target="_blank">A_UniformLions_Order_Analysis...</a></td>
+                <td>統一獅 2026 例行賽 訂單營收分析</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>12</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/03/24 08:35</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/A_WeiBird_Report_2026.html" target="_blank">A_WeiBird_Report_2026.html</a></td>
+                <td>韋禮安「HI WE1 巡迴演唱會」台北場分析</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily</span></td>
+                <td>手動</td>
+            </tr>
+
+            <tr>
+                <td>13</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/05/19</td>
+                <td><a href="A_BeerFestival_Index.html" target="_blank">A_BeerFestival_Index.html</a></td>
+                <td>🍺🌸 高雄 7-ELEVEN 特別活動報表目錄（啤酒音樂節 2025 & 2026 / 櫻花季 2025 & 2026，共 6 份報表）</td>
+                <td>—</td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily / QwareTrafficSession / Google Sheets</span></td>
+                <td>手動</td>
+            </tr>
+
+            <tr>
+                <td>14</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/05/19</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2025/A_KaohsiungSakuraFestival_2025.html" target="_blank">A_KaohsiungSakuraFestival_2025.html</a></td>
+                <td>🌸 2025 7-ELEVEN 高雄櫻花季 SAKURA FESTIVAL 專案銷售分析（3場次 3/28–3/30、開賣日 1/4 & 1/5、退票分析）</td>
+                <td>—</td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- Section: Traffic Reports -->
+            <tr style="background: rgba(233, 30, 99, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: #e91e63;">🌐 流量分析與 DMP 行銷</td>
+            </tr>
+            <tr>
+                <td>16</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/03/19 10:49</td>
+                <td><a href="A_DecaJoins_Traffic_Analysis.html" target="_blank">A_DecaJoins_Traffic_Analysis.html</a></td>
+                <td>deca joins 2026 場次流量明細</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_TRAFFIC_ANALYSIS.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Traffic_session_data</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>17</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/07/23</td>
+                <td><a href="A_DMP_PageView_Report_AllTime_Top10.html" target="_blank">A_DMP_PageView_Report_AllTime_Top10.html</a></td>
+                <td>DMP 歷史總流量 Top 10 活動排行（2026/07/23 起改為增量更新，不重複訪客為 HyperLogLog 估算值）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_TRAFFIC_ANALYSIS.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">trek-first-party-dmp.event</span></td>
+                <td>每月 1 日 10:00</td>
+            </tr>
+            <tr>
+                <td>18</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/03/11 15:26</td>
+                <td><a href="A_GA_Traffic_Analysis_Report.html" target="_blank">A_GA_Traffic_Analysis_Report.html</a></td>
+                <td>GA 網站流量與閱讀留存分析</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_TRAFFIC_ANALYSIS.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">QwareTrafficSession</span></td>
+                <td>每日 08:00 / 15:00
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/03/27 08:04</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>19</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/03/17 17:16</td>
+                <td><a href="A_UniformLions_GA_Analysis_20260309.html" target="_blank">A_UniformLions_GA_Analysis_...</a></td>
+                <td>統一獅 開賣首日 GA 流量即時分析</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_TRAFFIC_ANALYSIS.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">QwareTrafficSession</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>20</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/05/05 16:30</td>
+                <td><a href="A_GA_Events_Traffic_Report.html" target="_blank">A_GA_Events_Traffic_Report.html</a></td>
+                <td>GA 事件流量深度分析（每分鐘 Session / 訂單 / 張數，含 IP 地理連結）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_GA_EVENTS_TRAFFIC.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">QwareTrafficSession / QwareTrafficGAReadTime</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>20-D</td>
+                <td><span class="sys-badge sys-d">D系統</span></td>
+                <td class="update-time">2026/06/08</td>
+                <td><a href="D_GA_ClickData_Webb_202606_Report.html" target="_blank">D_GA_ClickData_Webb_202606_Report.html</a></td>
+                <td>D 系統節目點擊量分析（2026/06，33 活動 · 451 場次 · 448,578 次點擊，含登入/未登入比例、每日趨勢、活動排行）</td>
+                <td><a href="REPORT_SPEC_D_GA_CLICKDATA_202606.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">QwareAi / GA_D_ClickData_Webb_202606</span></td>
+                <td>手動
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/06/08</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>20-E</td>
+                <td><span class="sys-badge sys-d">D系統</span></td>
+                <td class="update-time">2026/06/12</td>
+                <td><a href="D_GA_PageViewData_Webb_202606_Report.html" target="_blank">D_GA_PageViewData_Webb_202606_Report.html</a></td>
+                <td>D 系統節目介紹頁瀏覽量分析（2026/06/10 快照，32 活動 · 33,995 PV，含類別分布、TOP10、集中度分析）</td>
+                <td><a href="REPORT_SPEC_D_GA_PAGEVIEWDATA_202606.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">QwareAi / GA_D_PageViewData_Webb_202606</span></td>
+                <td>手動
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/06/12</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>20-F</td>
+                <td><span class="sys-badge sys-d">D系統</span></td>
+                <td class="update-time">2026/07/14 10:30</td>
+                <td><a href="D_GA_Funnel_202606_Report.html" target="_blank">D_GA_Funnel_202606_Report.html</a></td>
+                <td>D 系統瀏覽→點擊→購物車→結帳轉換分析（2026/06 起累計，泡泡圖+完整活動對照表，日期篩選；2026/07/14 起 A購物車/結帳每日資料隨排程自動更新，四層同步）</td>
+                <td><a href="REPORT_SPEC_D_GA_FUNNEL_202606.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">GA_D_PageViewData_Webb_202606 + GA_D_ClickData_Webb_202606 + trek-first-party-dmp.event</span></td>
+                <td>每日 08:00（daily_update.bat）
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/07/14 10:30</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>21</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/06/03 14:16</td>
+                <td><a href="A_IP_Geo_Analysis_Report.html" target="_blank">A_IP_Geo_Analysis_Report.html</a></td>
+                <td>A 系統 IP 地理分析（台灣 vs 海外）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_IP_GEO_ANALYSIS.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily</span></td>
+                <td>手動
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/06/03 14:16</span>
+                    </div>
+                </td>
+            </tr>
+
+            <tr>
+                <td>22</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/06/03 14:30</td>
+                <td><a href="A_IP_Geo_Analysis_Report_Historical.html" target="_blank">A_IP_Geo_Analysis_Report_Historical.html</a></td>
+                <td>A 系統 歷史 IP 地理分析（全資料 Qware_Ticket_Data）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_IP_GEO_HISTORICAL.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/05/05 15:12</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Section: E System Reports -->
+            <tr style="background: rgba(76, 175, 80, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: var(--accent-green);">🛒 E 系統與其他分析</td>
+            </tr>
+            <tr>
+                <td>42</td>
+                <td><span class="sys-badge sys-e">E系統</span></td>
+                <td class="update-time">2026/07/07</td>
+                <td><a href="E_DMP_Funnel_Report.html" target="_blank">E_DMP_Funnel_Report.html</a></td>
+                <td>E 系統購票流量轉換分析（2026/01/05 起累計，587 活動 · 358 共同 · 瀏覽→購買兩階段漏斗，含張數/金額/轉換率、泡泡圖、日期篩選）</td>
+                <td><a href="REPORT_SPEC_E_DMP_FUNNEL.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">trek-first-party-dmp / event（bu:"E"）</span></td>
+                <td>每日 08:00（daily_update.bat）
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                        <span class="run-time">2026/07/07</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>41</td>
+                <td><span class="sys-badge sys-e">E系統</span></td>
+                <td class="update-time">2026/07/21 09:15</td>
+                <td><a href="E_Qware_Revenue_Report_2026年06月_分析報表.html" target="_blank">E_Qware_Revenue_Report_2026年06月_分析報表.html</a></td>
+                <td>E 系統 月度對帳報表 (2026/06)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_E.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data_Esys</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>40</td>
+                <td><span class="sys-badge sys-e">E系統</span></td>
+                <td class="update-time">2026/06/17 09:05</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年05月_分析報表.html" target="_blank">E_Qware_Revenue_Report_2026年05月_分析報表.html</a></td>
+                <td>E 系統 月度對帳報表 (2026/05)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_E.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data_Esys</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>23</td>
+                <td><span class="sys-badge sys-e">E系統</span></td>
+                <td class="update-time">2026/05/18</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年04月_分析報表.html" target="_blank">E_Qware_Revenue_Report_2026年04月_分析報表.html</a></td>
+                <td>E 系統 月度對帳報表 (2026/04)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_E.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data_Esys</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>39</td>
+                <td><span class="sys-badge sys-e">E系統</span></td>
+                <td class="update-time">2026/04/09 08:14</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年03月_分析報表.html" target="_blank">E_Qware_Revenue_Report_2026年03月_分析報表.html</a></td>
+                <td>E 系統 月度對帳報表 (2026/03)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_E.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data_Esys</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>23</td>
+                <td><span class="sys-badge sys-e">E系統</span></td>
+                <td class="update-time">2026/03/11 15:26</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年02月_分析報表.html" target="_blank">E_Qware_Revenue_Report_Monthly.html</a></td>
+                <td>E 系統 月度對帳報表 (退補分析)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_REVENUE_E.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_ticket_list</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>24</td>
+                <td><span class="sys-badge sys-sys">營運</span></td>
+                <td class="update-time">2026/07/21 09:27</td>
+                <td><a href="Azure_Cost_Analysis_Report.html" target="_blank">Azure_Cost_Analysis_Report.html</a></td>
+                <td>Azure 全站雲端基礎設施 費用分析評估（含 A/D/E/會員系統費用拆分、月趨勢、年度匯總）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_AZURE_COST.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">AzureMonthlyCost</span></td>
+                <td>月次</td>
+            </tr>
+            <tr>
+                <td>25</td>
+                <td><span class="sys-badge sys-sys">營運</span></td>
+                <td class="update-time">2026/07/09 14:05</td>
+                <td><a href="daily_expense_report.html" target="_blank">daily_expense_report.html</a></td>
+                <td>每日雲端費用明細與活動分析報表（A/D/E/共用/會員，含活動節點標籤）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_AZURE_DAILY.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">AzureMonthlyCost_Daily</span></td>
+                <td>月次（每月匯入後重生成）</td>
+            </tr>
+            <tr>
+                <td>47</td>
+                <td><span class="sys-badge sys-sys">營運</span></td>
+                <td class="update-time">2026/07/09 16:41</td>
+                <td><a href="sysD_apr_may_jun_compare.html" target="_blank">sysD_apr_may_jun_compare.html</a></td>
+                <td>D 系統 (AWS) 2026年 4/5/6月每日費用三線比較（線性/對數切換、跨月峰值事件、無活動日基線分析；舊版 4/5月比較：<a href="sysD_april_may_compare.html" target="_blank">sysD_april_may_compare.html</a>）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_AZURE_DAILY.md" class="spec-link" target="_blank">📄 規範文檔 (MD) §8.2</a></td>
+                <td><span class="table-name">靜態 JS 陣列（源自 AzureMonthlyCost_Daily）</span></td>
+                <td>手動（單次分析）</td>
+            </tr>
+
+            <!-- Section: ibon Ticket QA -->
+            <tr style="background: rgba(66, 245, 182, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: #42f5b6;">🚀 ibon 票券客服 QA</td>
+            </tr>
+            <tr>
+                <td>30</td>
+                <td><span class="sys-badge sys-other">ibon</span></td>
+                <td class="update-time">2026/04/08 11:20</td>
+                <td><a href="https://project1-production-76e0.up.railway.app/demo.html" target="_blank">demo.html</a></td>
+                <td>ibon 票券客服展示頁面 (Demo)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_RAILWAY_DEMO.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">ibon_QA_DB</span></td>
+                <td>即時</td>
+            </tr>
+            <tr>
+                <td>31</td>
+                <td><span class="sys-badge sys-other">ibon</span></td>
+                <td class="update-time">2026/04/08 11:20</td>
+                <td><a href="https://project1-production-76e0.up.railway.app/admin" target="_blank">admin</a></td>
+                <td>ibon 票券客服管理系統 (Admin Dashboard)</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_RAILWAY_ADMIN.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">ibon_QA_DB</span></td>
+                <td>即時</td>
+            </tr>
+            <tr>
+                <td>32</td>
+                <td><span class="sys-badge sys-other">ibon</span></td>
+                <td class="update-time">2026/04/08 11:45</td>
+                <td>-</td>
+                <td>ibon 票券客服 (Demo + Admin) 專屬系統架構與流程圖</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/RAILWAY_SYSTEM_ARCHITECTURE.md" class="spec-link" target="_blank">🌐 檢視專案架構與流程圖</a></td>
+                <td><span class="table-name">ibon_QA_DB</span></td>
+                <td>即時</td>
+            </tr>
+
+            <!-- Section: 自動排程程式 -->
+            <tr style="background: rgba(126, 87, 194, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: #b39ddb;">⏰ 自動排程程式</td>
+            </tr>
+            <tr>
+                <td>S1</td>
+                <td><span class="sys-badge sys-sch">排程</span></td>
+                <td class="update-time">
+                    2026/07/23 08:08
+                    <div class="run-info">
+                        <span class="run-status success">✓ Final 成功</span>
+                    </div>
+                </td>
+                <td>
+                    <a href="Scheduled_Tasks_Dashboard.html" target="_blank">Scheduled_Tasks_Dashboard.html</a><br>
+                    <small style="color:#9e9e9e;">BAT：<a href="https://github.com/lard23chen/NewReport/blob/main/daily_update.bat" target="_blank" style="color:#9e9e9e;">daily_update.bat</a><br>排程：<s style="opacity:0.6;">Qware_Daily_Report_Update</s>（已停用）<br>Qware_Daily_Report_Update_Final<br>Qware_Monthly_Report_Update</small>
+                </td>
+                <td>
+                    每日 08:00 自動更新四份報表 + 首頁統計並 git push：<br>
+                    ① <a href="A_Qware_Revenue_Report_Daily.html" target="_blank">A_Qware_Revenue_Report_Daily.html</a><br>
+                    ② <a href="D_GA_Funnel_202606_Report.html" target="_blank">D_GA_Funnel_202606_Report.html</a>（含 A購物車/結帳資料，07/14 起）<br>
+                    ③ <a href="E_DMP_Funnel_Report.html" target="_blank">E_DMP_Funnel_Report.html</a><br>
+                    ④ <a href="report_index.html" target="_blank">report_index.html</a>（月份統計/趨勢圖/月份卡片）<br>
+                    另每月 2 日產上月月報、每月 10 日更新 GA 流量分析<br>
+                    <small style="color:#9e9e9e;">2026/07/23 起：任一 script 或 git push 失敗改為記錄後繼續（不中斷其他報表），跑完統一發 LINE 成功／⚠ 失敗告警</small><br>
+                    <small style="color:#9e9e9e;">2026/07/23 起：<span class="mono" style="opacity:0.6;">A_KaohsiungBeerFestival_2026.html</span>／<span class="mono" style="opacity:0.6;">D_GA_ClickData_Webb_202606_Report.html</span>／<span class="mono" style="opacity:0.6;">D_GA_PageViewData_Webb_202606_Report.html</span> 停止每日自動更新（已從 daily_update.bat 移除，改為手動維護）</small>
+                </td>
+                <td>
+                    <a href="Scheduled_Tasks_Dashboard.html" class="spec-link" target="_blank">🖥️ HTML 儀表板</a><br>
+                    <a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_SCHEDULED_TASKS.md" class="spec-link" target="_blank" style="margin-top:4px;display:inline-block;">📄 規範文檔 (MD)</a>
+                </td>
+                <td>
+                    <span class="table-name">Qware_A_Ticket_data_Daily</span><br>
+                    <span class="table-name">Qware_A_Traffic_session_data</span><br>
+                    <span class="table-name">GA_D_ClickData_Webb_202606</span><br>
+                    <span class="table-name">GA_D_PageViewData_Webb_202606</span>
+                </td>
+                <td>每日 08:00（日常）<br>每月 1 日 08:30（月報）
+                    <div class="run-info">
+                        <span class="run-time">Next: 07/24 08:00</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>S2</td>
+                <td><span class="sys-badge sys-sch">排程</span></td>
+                <td class="update-time">
+                    2026/07/23 08:08
+                    <div class="run-info">
+                        <span class="run-status success">✓ 0800 成功</span>
+                    </div>
+                    <div class="run-info">
+                        <span class="run-status success">⏳ 1500 待執行</span>
+                    </div>
+                </td>
+                <td>
+                    <a href="https://github.com/lard23chen/NewReport/blob/main/update_ga_report.bat" target="_blank">update_ga_report.bat</a><br>
+                    <small style="color:#9e9e9e;">排程：Update_GA_Report_0800<br>Update_GA_Report_1500</small>
+                </td>
+                <td>
+                    每日 08:00 & 15:00 更新 GA 流量報表：<br>
+                    ① <a href="A_GA_Events_Traffic_Report.html" target="_blank">A_GA_Events_Traffic_Report.html</a><br>
+                    <small style="color:#9e9e9e;">2026/07/23 起：報表產生或 git push 失敗會即時發 LINE ⚠ 失敗告警（無重複執行保護，因刻意一天跑兩次）</small>
+                </td>
+                <td>
+                    <a href="Scheduled_Tasks_Dashboard.html" class="spec-link" target="_blank">🖥️ HTML 儀表板</a><br>
+                    <a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_SCHEDULED_TASKS.md" class="spec-link" target="_blank" style="margin-top:4px;display:inline-block;">📄 規範文檔 (MD)</a>
+                </td>
+                <td><span class="table-name">Qware_A_Traffic_session_data</span></td>
+                <td>每日 08:00 / 15:00
+                    <div class="run-info">
+                        <span class="run-time">Next 1500: 今日 15:00</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>S3</td>
+                <td><span class="sys-badge sys-sch">排程</span></td>
+                <td class="update-time">
+                    2026/07/23 08:30
+                    <div class="run-info">
+                        <span class="run-status success">✓ 成功</span>
+                    </div>
+                </td>
+                <td>
+                    <a href="https://github.com/lard23chen/NewReport/blob/main/weekly_update.bat" target="_blank">weekly_update.bat</a><br>
+                    <small style="color:#9e9e9e;">排程：Qware_Weekly_Report_Update</small>
+                </td>
+                <td>
+                    每週四早上 8:30 產出 A 系統週報（上週四～本週三，排除 B 開頭訂單）並 git push：<br>
+                    ① <a href="A_Qware_Revenue_Report_Weekly_20260716-20260722.html" target="_blank">A_Qware_Revenue_Report_Weekly_20260716-20260722.html</a><br>
+                    並自動更新 report_index.html Tab7 週報卡片與本目錄週報列連結<br>
+                    <small style="color:#9e9e9e;">2026/07/23 起：報表產生或 git push 失敗即中斷並發 LINE ⚠ 失敗告警</small>
+                </td>
+                <td>
+                    <a href="Scheduled_Tasks_Dashboard.html" class="spec-link" target="_blank">🖥️ HTML 儀表板</a><br>
+                    <a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_SCHEDULED_TASKS.md" class="spec-link" target="_blank" style="margin-top:4px;display:inline-block;">📄 規範文檔 (MD)</a>
+                </td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily</span></td>
+                <td>每週四 08:30（錯過開機自動補跑）
+                    <div class="run-info">
+                        <span class="run-time">Next: 2026/07/30 08:30</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>S5</td>
+                <td><span class="sys-badge sys-sch">排程</span></td>
+                <td class="update-time">
+                    2026/07/23
+                    <div class="run-info">
+                        <span class="run-status success">✓ 建立時手動驗證</span>
+                    </div>
+                </td>
+                <td>
+                    <a href="https://github.com/lard23chen/NewReport/blob/main/update_dmp_alltime_top10.bat" target="_blank">update_dmp_alltime_top10.bat</a><br>
+                    <small style="color:#9e9e9e;">排程：Qware_DMP_AllTime_Top10_Monthly</small>
+                </td>
+                <td>
+                    每月 1 日 10:00 更新 DMP 歷史 Top10 流量報表並 git push：<br>
+                    ① <a href="A_DMP_PageView_Report_AllTime_Top10.html" target="_blank">A_DMP_PageView_Report_AllTime_Top10.html</a>（含 10 份節目明細頁）<br>
+                    <small style="color:#9e9e9e;">2026/07/23 新增：改為增量架構（狀態內嵌於報表 HTML），只查新資料，首次執行為一次性全量 bootstrap（約 40 分鐘），之後每月僅需秒級到低分鐘級；不重複訪客改用自製 HyperLogLog 估算（無新增 npm 依賴），避免完整訪客清單讓報表檔案無限增長。排程時間刻意避開 08:00 daily/GA 群聚時段。</small>
+                </td>
+                <td>
+                    <a href="Scheduled_Tasks_Dashboard.html" class="spec-link" target="_blank">🖥️ HTML 儀表板</a><br>
+                    <a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_TRAFFIC_ANALYSIS.md" class="spec-link" target="_blank" style="margin-top:4px;display:inline-block;">📄 規範文檔 (MD)</a>
+                </td>
+                <td><span class="table-name">trek-first-party-dmp.event</span></td>
+                <td>每月 1 日 10:00
+                    <div class="run-info">
+                        <span class="run-time">Next: 08/01 10:00</span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Section: AI 工具 -->
+            <tr style="background: rgba(124, 158, 255, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: #7c9eff;">🤖 AI 工具</td>
+            </tr>
+            <tr>
+                <td>35</td>
+                <td><span class="sys-badge" style="background:#7c9eff;">工具</span></td>
+                <td class="update-time">2026/05/08</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/CLAUDE.md" target="_blank">CLAUDE.md</a></td>
+                <td>Claude Code 專案開發規範（開發前後流程、git 規則、HTML 與 generator 同步警告）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/CLAUDE.md" class="spec-link" target="_blank">📄 查看文檔</a></td>
+                <td>-</td>
+                <td>手動維護</td>
+            </tr>
+            <tr>
+                <td>34</td>
+                <td><span class="sys-badge" style="background:#7c9eff;">工具</span></td>
+                <td class="update-time">2026/05/08 local</td>
+                <td><a href="http://localhost:3000/prompt_log_viewer.html" target="_blank">prompt_log_viewer.html</a></td>
+                <td>Claude Prompt Log 檢視器（讀取 ~/.claude/prompt-log.txt，支援搜尋、排序、Refresh）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_PROMPT_LOG_VIEWER.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">prompt-log.txt</span></td>
+                <td>手動 Refresh（需本地 server）</td>
+            </tr>
+
+            <!-- Section: 建檔檢核使用 -->
+            <tr style="background: rgba(38, 198, 218, 0.1);">
+                <td colspan="8" style="font-weight: bold; color: #26c6da;">🔍 建檔檢核使用</td>
+            </tr>
+            <tr>
+                <td>33</td>
+                <td><span class="sys-badge sys-chk">建檔</span></td>
+                <td class="update-time">2026/05/07 10:00</td>
+                <td><a href="https://ticket-compare-qware.streamlit.app/" target="_blank">ticket-compare (Streamlit)</a></td>
+                <td>安源 vs 廠商票價比對工具（上傳 Excel 自動比對票區/票種/票價，產出差異 Excel 報告）</td>
+                <td><a href="https://github.com/lard23chen/NewReport/blob/main/REPORT_SPEC_TICKET_COMPARE.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">安源.xls / 廠商.xlsx</span></td>
+                <td>手動上傳</td>
+            </tr>
+        </tbody>
+    </table>
+
+<script>
+// ── Tab filtering ──────────────────────────────────────────────────────────
+(function() {
+    // Map section header text snippets → tab group
+    var SECTION_MAP = [
+        { match: '主控台',  group: 'dashboard' },
+        { match: 'A 系統',  group: 'asys'      },
+        { match: '演唱會',  group: 'asys'      },
+        { match: '流量',    group: 'dsys'      },
+        { match: 'E 系統',  group: 'esys'      },
+        { match: 'ibon',    group: 'tools'     },
+        { match: '排程',    group: 'tools'     },
+        { match: 'AI 工具', group: 'tools'     },
+        { match: '建檔',    group: 'tools'     },
+    ];
+
+    var tbody = document.querySelector('table tbody');
+    var rows  = Array.from(tbody.rows);
+    var currentGroup = 'dashboard'; // default before first header
+
+    // Assign data-group to every row
+    rows.forEach(function(row) {
+        var headerCell = row.querySelector('td[colspan="8"]');
+        if (headerCell) {
+            var text = headerCell.textContent || '';
+            for (var i = 0; i < SECTION_MAP.length; i++) {
+                if (text.indexOf(SECTION_MAP[i].match) !== -1) {
+                    currentGroup = SECTION_MAP[i].group;
+                    break;
+                }
+            }
+            row.setAttribute('data-group', currentGroup);
+            row.setAttribute('data-header', '1');
+        } else {
+            row.setAttribute('data-group', currentGroup);
+        }
+    });
+
+    // Count rows per group (excluding header rows) and update tab labels
+    var counts = {};
+    rows.forEach(function(row) {
+        if (!row.getAttribute('data-header')) {
+            var g = row.getAttribute('data-group');
+            counts[g] = (counts[g] || 0) + 1;
+        }
+    });
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        var tab = btn.getAttribute('data-tab');
+        if (tab === 'all') {
+            var total = rows.filter(function(r){ return !r.getAttribute('data-header'); }).length;
+            btn.innerHTML = btn.innerHTML + ' <span class="tab-count">' + total + '</span>';
+        } else if (counts[tab]) {
+            btn.innerHTML = btn.innerHTML + ' <span class="tab-count">' + counts[tab] + '</span>';
+        }
+    });
+})();
+
+function switchTab(tab, el) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    el.classList.add('active');
+
+    var tbody = document.querySelector('table tbody');
+    Array.from(tbody.rows).forEach(function(row) {
+        var g = row.getAttribute('data-group');
+        row.style.display = (tab === 'all' || g === tab) ? '' : 'none';
+    });
+}
+</script>
+
+</body>
+
+</html>
