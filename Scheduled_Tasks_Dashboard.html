@@ -1,0 +1,501 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qware 自動排程程式 儀表板</title>
+    <!-- IP Allowlist: internal network only -->
+    <style>html { visibility: hidden; }</style>
+    <script>
+        (function () {
+            var ALLOWED = [
+                '211.75.181.109', '211.75.181.110',
+                '220.130.6.196',  '220.130.6.197',  '220.130.6.198',
+                '220.130.134.238','220.130.134.239', '220.130.134.240',
+                '133.149.194.24'
+            ];
+            function deny(ip) {
+                document.documentElement.style.visibility = 'visible';
+                document.body.style.cssText = 'margin:0;padding:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;';
+                document.body.innerHTML =
+                    '<div style="text-align:center;font-family:Outfit,sans-serif;padding:40px">' +
+                    '<div style="font-size:5rem;margin-bottom:20px">🔒</div>' +
+                    '<h1 style="color:#ef4444;font-size:2rem;margin:0 0 14px">存取被拒絕</h1>' +
+                    '<p style="color:#94a3b8;margin:0 0 8px">您目前的 IP 位址：' +
+                    '<code style="background:#1e293b;padding:2px 10px;border-radius:4px;color:#f472b6">' + ip + '</code></p>' +
+                    '<p style="color:#64748b;font-size:0.88rem">此頁面僅限內部網路存取 &middot; Access restricted to internal network only</p>' +
+                    '</div>';
+            }
+            var timer = setTimeout(function () { deny('timeout'); }, 6000);
+            fetch('https://api.ipify.org?format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    clearTimeout(timer);
+                    if (ALLOWED.indexOf(d.ip) !== -1) {
+                        document.documentElement.style.visibility = 'visible';
+                    } else { deny(d.ip); }
+                })
+                .catch(function () { clearTimeout(timer); deny('unknown'); });
+        })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --card: #1a1a2e;
+            --card2: #16213e;
+            --accent: #9c6fe4;
+            --accent2: #7c4dff;
+            --text: #e8e8f0;
+            --muted: #8888aa;
+            --success: #4caf50;
+            --error: #ef5350;
+            --warn: #ff9800;
+            --border: rgba(156,111,228,0.2);
+            --shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Outfit','Noto Sans TC',sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 30px; }
+        .container { max-width: 1300px; margin: 0 auto; }
+
+        header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 20px; padding: 36px 40px; margin-bottom: 36px;
+            border-bottom: 4px solid var(--accent);
+            display: flex; justify-content: space-between; align-items: flex-end;
+            box-shadow: var(--shadow);
+        }
+        .header-title { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg,#b39ddb,#7c4dff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0; }
+        .header-sub { color: var(--accent); font-size: 1rem; margin-top:6px; font-weight:600; }
+        .header-meta { text-align:right; font-size:0.85rem; color:var(--muted); }
+        .header-meta a { color: var(--accent); text-decoration:none; }
+        .header-meta a:hover { text-decoration:underline; }
+
+        /* KPI Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:20px; margin-bottom:36px; }
+        .kpi { background:var(--card); border-radius:16px; padding:22px 24px; border:1px solid var(--border); box-shadow:var(--shadow); }
+        .kpi h4 { margin:0 0 10px; font-size:0.78rem; text-transform:uppercase; color:var(--muted); letter-spacing:0.05em; }
+        .kpi .val { font-size:2.4rem; font-weight:800; }
+        .kpi .sub { font-size:0.8rem; color:var(--muted); margin-top:4px; }
+        .kpi.ok .val { color: var(--success); }
+        .kpi.err .val { color: var(--error); }
+        .kpi.warn .val { color: var(--warn); }
+        .kpi.pur .val { color: var(--accent); }
+
+        /* Section title */
+        .sec-title { font-size:1.1rem; font-weight:700; color:var(--accent); border-left:4px solid var(--accent); padding-left:12px; margin:0 0 18px; }
+
+        /* Task Status Table */
+        .card-block { background:var(--card); border-radius:18px; padding:28px; margin-bottom:28px; border:1px solid var(--border); box-shadow:var(--shadow); }
+        table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+        th { color:var(--accent); font-size:0.78rem; text-transform:uppercase; font-weight:600; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; }
+        td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:top; }
+        tr:last-child td { border-bottom:none; }
+        tr:hover td { background:rgba(156,111,228,0.04); }
+        .mono { font-family:monospace; background:#0a0a18; color:#ce93d8; padding:2px 7px; border-radius:4px; font-size:0.85em; white-space:nowrap; }
+        .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:700; white-space:nowrap; }
+        .badge.ok { background:rgba(76,175,80,0.15); color:var(--success); border:1px solid rgba(76,175,80,0.4); }
+        .badge.err { background:rgba(239,83,80,0.15); color:var(--error); border:1px solid rgba(239,83,80,0.4); }
+        .badge.warn { background:rgba(255,152,0,0.15); color:var(--warn); border:1px solid rgba(255,152,0,0.4); }
+        .badge.pending { background:rgba(156,111,228,0.15); color:var(--accent); border:1px solid rgba(156,111,228,0.4); }
+
+        /* BAT detail cards */
+        .bat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:22px; margin-bottom:28px; }
+        .bat-card { background:var(--card2); border-radius:16px; padding:24px; border:1px solid var(--border); }
+        .bat-card h3 { margin:0 0 6px; font-size:1rem; color:#ce93d8; display:flex; align-items:center; gap:8px; }
+        .bat-card .trigger { font-size:0.8rem; color:var(--muted); margin-bottom:16px; }
+        .step-list { list-style:none; padding:0; margin:0 0 16px; }
+        .step-list li { display:flex; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.85rem; }
+        .step-list li:last-child { border-bottom:none; }
+        .step-num { background:var(--accent2); color:#fff; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0; margin-top:1px; }
+        .step-list .arrow { color:var(--accent); }
+        .output-links { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+        .out-link { font-size:0.78rem; padding:3px 10px; background:rgba(156,111,228,0.1); border:1px solid rgba(156,111,228,0.3); border-radius:6px; color:#ce93d8; text-decoration:none; }
+        .out-link:hover { background:rgba(156,111,228,0.25); text-decoration:none; }
+        .src-tag { display:inline-block; font-size:0.75rem; background:#0a0a18; color:#80cbc4; border:1px solid rgba(128,203,196,0.3); padding:2px 8px; border-radius:4px; margin:2px; }
+
+        /* Error note */
+        .error-box { background:rgba(239,83,80,0.08); border:1px solid rgba(239,83,80,0.3); border-radius:12px; padding:18px 22px; margin-bottom:28px; }
+        .error-box h4 { color:var(--error); margin:0 0 10px; font-size:0.95rem; }
+        .error-box ul { margin:0; padding-left:18px; font-size:0.88rem; color:var(--text); line-height:1.8; }
+        .error-box .steps { list-style:decimal; }
+
+        /* Maintenance */
+        .maint-box { background:rgba(156,111,228,0.06); border:1px solid var(--border); border-radius:12px; padding:20px 24px; }
+        .maint-box ol { margin:0; padding-left:18px; font-size:0.88rem; line-height:2; }
+        .maint-box ol li { color:var(--text); }
+        .maint-box ol li code { font-family:monospace; background:#0a0a18; color:#ce93d8; padding:1px 6px; border-radius:3px; }
+
+        a { color:var(--accent); text-decoration:none; }
+        a:hover { text-decoration:underline; color:#b39ddb; }
+        .text-muted { color:var(--muted); font-size:0.82rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <div>
+            <p class="header-title">⏰ 自動排程程式儀表板</p>
+            <p class="header-sub">Qware Windows Task Scheduler — 排程狀態總覽與技術規範</p>
+        </div>
+        <div class="header-meta">
+            <div>資料更新：2026/07/23</div>
+            <div style="margin-top:6px;">
+                <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_SCHEDULED_TASKS.md" target="_blank">📄 規範文檔 (MD)</a>
+                &nbsp;|&nbsp;
+                <a href="https://lard23chen.github.io/report/HTML_Report_Catalog.html" target="_blank">📋 總目錄</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+        <div class="kpi pur">
+            <h4>排程任務總數</h4>
+            <div class="val">8</div>
+            <div class="sub">6 啟用 + 2 已停用</div>
+        </div>
+        <div class="kpi pur">
+            <h4>BAT 程式數</h4>
+            <div class="val">5</div>
+            <div class="sub">daily / ga / weekly / travel / dmp_top10</div>
+        </div>
+        <div class="kpi ok">
+            <h4>今日成功</h4>
+            <div class="val">3</div>
+            <div class="sub">Final + GA 0800 + Weekly</div>
+        </div>
+        <div class="kpi err">
+            <h4>已停用</h4>
+            <div class="val">2</div>
+            <div class="sub">Qware_Daily_Report_Update ／ TravelExpenseUpdate（見表格備注）</div>
+        </div>
+        <div class="kpi warn">
+            <h4>今日待執行</h4>
+            <div class="val">1</div>
+            <div class="sub">1500 GA 排程</div>
+        </div>
+        <div class="kpi pur">
+            <h4>下次月報</h4>
+            <div class="val">08/01</div>
+            <div class="sub">08:30 Monthly</div>
+        </div>
+        <div class="kpi pur">
+            <h4>下次 DMP Top10</h4>
+            <div class="val">08/01</div>
+            <div class="sub">10:00 Monthly（2026/07/23 新增）</div>
+        </div>
+    </div>
+
+    <!-- Task Status Table -->
+    <div class="card-block">
+        <p class="sec-title">📋 排程任務狀態一覽（2026/07/23）</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>排程名稱</th>
+                    <th>BAT 檔</th>
+                    <th>觸發時間</th>
+                    <th>最後執行</th>
+                    <th>執行結果</th>
+                    <th>下次執行</th>
+                    <th>狀態</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="opacity:0.6;">
+                    <td><span class="mono">Qware_Daily_Report_Update</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/daily_update.bat" target="_blank">daily_update.bat</a></td>
+                    <td>每日 08:00</td>
+                    <td>2026/07/22 08:42</td>
+                    <td><span class="badge ok">✓ 成功 (0)</span></td>
+                    <td>—</td>
+                    <td><span class="badge warn">⏸ Disabled</span></td>
+                </tr>
+                <tr>
+                    <td><span class="mono">Qware_Daily_Report_Update_Final</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/daily_update.bat" target="_blank">daily_update.bat</a></td>
+                    <td>每日 08:00</td>
+                    <td>2026/07/23 08:08</td>
+                    <td><span class="badge ok">✓ 成功 (0)</span></td>
+                    <td>2026/07/24 08:00</td>
+                    <td><span class="badge ok">Ready</span></td>
+                </tr>
+                <tr>
+                    <td><span class="mono">Qware_Monthly_Report_Update</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/daily_update.bat" target="_blank">daily_update.bat</a></td>
+                    <td>每月 2 日 08:30</td>
+                    <td>2026/07/01 08:38</td>
+                    <td><span class="badge err">⚠ 2147946720</span></td>
+                    <td>2026/08/01 08:30</td>
+                    <td><span class="badge ok">Ready</span></td>
+                </tr>
+                <tr>
+                    <td><span class="mono">Update_GA_Report_0800</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/update_ga_report.bat" target="_blank">update_ga_report.bat</a></td>
+                    <td>每日 08:00</td>
+                    <td>2026/07/23 08:08</td>
+                    <td><span class="badge ok">✓ 成功 (0)</span></td>
+                    <td>2026/07/24 08:00</td>
+                    <td><span class="badge ok">Ready</span></td>
+                </tr>
+                <tr>
+                    <td><span class="mono">Update_GA_Report_1500</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/update_ga_report.bat" target="_blank">update_ga_report.bat</a></td>
+                    <td>每日 15:00</td>
+                    <td>2026/07/22 15:00</td>
+                    <td><span class="badge ok">✓ 成功 (0)</span></td>
+                    <td>2026/07/23 15:00</td>
+                    <td><span class="badge pending">⏳ 待執行</span></td>
+                </tr>
+                <tr>
+                    <td><span class="mono">Qware_Weekly_Report_Update</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/weekly_update.bat" target="_blank">weekly_update.bat</a></td>
+                    <td>每週四 08:30</td>
+                    <td>2026/07/23 08:30</td>
+                    <td><span class="badge ok">✓ 成功 (0)</span></td>
+                    <td>2026/07/30 08:30</td>
+                    <td><span class="badge ok">Ready</span></td>
+                </tr>
+                <tr style="opacity:0.6;">
+                    <td><span class="mono">TravelExpenseUpdate</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/travel/auto_update.bat" target="_blank">travel/auto_update.bat</a></td>
+                    <td>每日 06:00</td>
+                    <td>2026/07/23 08:08</td>
+                    <td><span class="badge err">✗ 失敗 (1)</span> <span class="badge ok" style="margin-left:4px;">已人工補跑成功</span></td>
+                    <td>—</td>
+                    <td><span class="badge warn">⏸ Disabled</span></td>
+                </tr>
+                <tr>
+                    <td><span class="mono">Qware_DMP_AllTime_Top10_Monthly</span></td>
+                    <td><a href="https://github.com/lard23chen/report/blob/main/update_dmp_alltime_top10.bat" target="_blank">update_dmp_alltime_top10.bat</a></td>
+                    <td>每月 1 日 10:00</td>
+                    <td>—</td>
+                    <td><span class="badge pending">尚未觸發（新建立）</span></td>
+                    <td>2026/08/01 10:00</td>
+                    <td><span class="badge ok">Ready</span></td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="text-muted" style="margin:14px 0 0;">* <span class="mono">Qware_Daily_Report_Update</span> 已於 2026/07/22 停用（原本與 <span class="mono">_Final</span> 設定相同觸發時間 08:00 互為備援，但兩者同時起跑反而造成 git 併發競爭、曾導致日報卡在舊版本兩天未被發現，詳見 <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_SCHEDULED_TASKS.md" target="_blank">REPORT_SPEC_SCHEDULED_TASKS.md</a> §6.3）；現只保留設定較完整的 <span class="mono">_Final</span>。</p>
+        <p class="text-muted" style="margin:6px 0 0;">* 曾短暫規劃的雲端 Claude Code Routines（daily/GA/weekly/travel/Azure 月報）已於 2026/07/22 全數停用，恢復本地排程為唯一主力，詳見 REPORT_SPEC_SCHEDULED_TASKS.md §0。</p>
+        <p class="text-muted" style="margin:6px 0 0;">* <span class="mono">TravelExpenseUpdate</span> 於 2026/07/23 08:08（因前一天電腦未開機、<code>StartWhenAvailable</code> 延後補跑，撞上與 daily/GA 相同的觸發時刻）在 git push 階段無聲中止，<code>LastTaskResult=1</code>；報表本身已產出成功、只是沒推上去。事後人工重跑 <span class="mono">travel/auto_update.bat</span> 補推成功。詳見 REPORT_SPEC_SCHEDULED_TASKS.md §6.3 追記。</p>
+        <p class="text-muted" style="margin:6px 0 0;">* <strong>2026/07/23 新增</strong>：<span class="mono">Qware_DMP_AllTime_Top10_Monthly</span> 排程 + <span class="mono">update_dmp_alltime_top10.bat</span>，每月 1 日 10:00 更新 DMP 歷史 Top10 流量報表（刻意避開 08:00 daily/GA 群聚時段）。同時把 <span class="mono">generate_alltime_top10_v3.js</span> 從每次全表掃描（~40 分鐘）改為增量架構：狀態序列化內嵌於報表 HTML，之後每月只查新資料；不重複訪客改用自製 HyperLogLog 估算，避免完整訪客清單讓報表檔案無限增長。詳見 REPORT_SPEC_TRAFFIC_ANALYSIS.md §3。</p>
+        <p class="text-muted" style="margin:6px 0 0;">* <strong>2026/07/23 新增失敗告警機制</strong>：四支 BAT（daily / GA / weekly / travel）在關鍵步驟（報表產生、git push）失敗時，現在都會呼叫 <span class="mono">send_line_notify.ps1 -Status FAIL</span> 立即發 LINE 告警並註明原因，不用再等使用者自己發現報表沒更新；travel／weekly 額外加上「今日已完成」重複執行保護（daily 本來就有）。GA 因每日刻意觸發兩次（08:00/15:00）不適用此保護。</p>
+        <p class="text-muted" style="margin:6px 0 0;">* <span class="mono">TravelExpenseUpdate</span> 已於 2026/07/23 停用。</p>
+    </div>
+
+    <!-- BAT Detail Cards -->
+    <p class="sec-title" style="margin-bottom:18px;">⚙️ BAT 程式執行內容</p>
+    <div class="bat-grid">
+
+        <!-- daily_update.bat -->
+        <div class="bat-card">
+            <h3>📁 daily_update.bat</h3>
+            <div class="trigger">
+                排程：<span class="mono" style="opacity:0.5;text-decoration:line-through;">Qware_Daily_Report_Update</span>（已停用）· <span class="mono">_Final</span> · <span class="mono">Monthly</span><br>
+                觸發：每日 08:00 &amp; 每月 2 日 08:30 ／ 執行目錄：<code style="color:#ce93d8">D:\2025\AI\MongoDB</code>
+            </div>
+            <ul class="step-list">
+                <li>
+                    <span class="step-num">1</span>
+                    <span><span class="mono">generate_a_daily_report.js</span> <span class="arrow">→</span>
+                    <a href="https://lard23chen.github.io/report/A_Qware_Revenue_Report_Daily.html" target="_blank">A_Qware_Revenue_Report_Daily.html</a></span>
+                </li>
+                <li>
+                    <span class="step-num">2</span>
+                    <span><span class="mono">generate_d_ga_funnel_report.js</span> <span class="arrow">→</span>
+                    <a href="https://lard23chen.github.io/report/D_GA_Funnel_202606_Report.html" target="_blank">D_GA_Funnel_202606_Report.html</a></span>
+                </li>
+                <li>
+                    <span class="step-num">3</span>
+                    <span><span class="mono">generate_e_dmp_funnel_report.js</span> <span class="arrow">→</span>
+                    <a href="https://lard23chen.github.io/report/E_DMP_Funnel_Report.html" target="_blank">E_DMP_Funnel_Report.html</a></span>
+                </li>
+                <li>
+                    <span class="step-num">4</span>
+                    <span>git add · commit · push origin main（單一 script 失敗不中斷，記入 FAILED_STEPS，2026/07/23 新增）</span>
+                </li>
+                <li>
+                    <span class="step-num">5</span>
+                    <span>結束時：全部成功 → LINE 完成通知；有 FAILED_STEPS → LINE ⚠ 失敗告警列出失敗清單（2026/07/23 新增）</span>
+                </li>
+            </ul>
+            <div>資料來源：
+                <span class="src-tag">Qware_A_Ticket_data_Daily</span>
+                <span class="src-tag">GA_D_ClickData_Webb_202606</span>
+                <span class="src-tag">GA_D_PageViewData_Webb_202606</span>
+            </div>
+            <div style="margin-top:10px;">Log：<span class="mono">daily_log.txt</span></div>
+            <div style="margin-top:6px;font-size:0.82rem;color:var(--muted);">2026/07/23 起：<span class="mono" style="opacity:0.6;">generate_kaohsiung_beer_festival_report.js</span>／<span class="mono" style="opacity:0.6;">generate_d_ga_clickdata_report.js</span>／<span class="mono" style="opacity:0.6;">generate_d_ga_pageview_report.js</span> 已移除，三份報表停止每日自動更新</div>
+        </div>
+
+        <!-- update_ga_report.bat -->
+        <div class="bat-card">
+            <h3>📁 update_ga_report.bat</h3>
+            <div class="trigger">
+                排程：<span class="mono">Update_GA_Report_0800</span> · <span class="mono">_1500</span><br>
+                觸發：每日 08:00 &amp; 15:00 ／ 執行目錄：<code style="color:#ce93d8">D:\2025\AI\MongoDB</code>
+            </div>
+            <ul class="step-list">
+                <li>
+                    <span class="step-num">1</span>
+                    <span><span class="mono">generate_ga_events_report.js</span> <span class="arrow">→</span>
+                    <a href="https://lard23chen.github.io/report/A_GA_Events_Traffic_Report.html" target="_blank">A_GA_Events_Traffic_Report.html</a></span>
+                </li>
+                <li>
+                    <span class="step-num">2</span>
+                    <span>git add · commit · push（任一步驟失敗 → LINE ⚠ 失敗告警，2026/07/23 新增；無重複執行保護，因一天刻意跑兩次）</span>
+                </li>
+            </ul>
+            <div>資料來源：<span class="src-tag">Qware_A_Traffic_session_data</span></div>
+            <div style="margin-top:10px;font-size:0.82rem;color:var(--muted);">
+                08:00 取前日完整數據 ／ 15:00 取當日即時更新
+            </div>
+        </div>
+
+        <!-- weekly_update.bat -->
+        <div class="bat-card">
+            <h3>📁 weekly_update.bat</h3>
+            <div class="trigger">
+                排程：<span class="mono">Qware_Weekly_Report_Update</span><br>
+                觸發：每週四 08:30（StartWhenAvailable 錯過補跑）／ 執行目錄：<code style="color:#ce93d8">D:\2025\AI\MongoDB</code>
+            </div>
+            <ul class="step-list">
+                <li>
+                    <span class="step-num">1</span>
+                    <span><span class="mono">generate_a_weekly_report.js</span> <span class="arrow">→</span>
+                    <span class="mono">A_Qware_Revenue_Report_Weekly_YYYYMMDD-YYYYMMDD.html</span>（上週四~本週三，排除B開頭訂單，每週獨立檔案）</span>
+                </li>
+                <li>
+                    <span class="step-num">2</span>
+                    <span>自動插入 report_index.html tab7 本週卡片 · 更新 HTML_Report_Catalog.html 週報列</span>
+                </li>
+                <li>
+                    <span class="step-num">3</span>
+                    <span>git add（僅週報相關檔案與 log）· commit · push origin main（失敗即中斷＋LINE ⚠ 告警，2026/07/23 新增；本來就沒有成功通知，這次也沒新增）</span>
+                </li>
+            </ul>
+            <div>資料來源：<span class="src-tag">Qware_A_Ticket_data_Daily</span></div>
+            <div style="margin-top:10px;">Log：<span class="mono">weekly_log.txt</span></div>
+        </div>
+
+        <!-- travel/auto_update.bat -->
+        <div class="bat-card" style="opacity:0.6;">
+            <h3>📁 travel/auto_update.bat（已停用）</h3>
+            <div class="trigger">
+                排程：<span class="mono">TravelExpenseUpdate</span>（2026/07/23 停用）<br>
+                觸發：每日 06:00 ／ 執行目錄：<code style="color:#ce93d8">D:\2025\AI\MongoDB\travel</code>
+            </div>
+            <ul class="step-list">
+                <li>
+                    <span class="step-num">1</span>
+                    <span>Google Sheets 下載花費 CSV → <span class="mono">new_analysis_data.csv</span></span>
+                </li>
+                <li>
+                    <span class="step-num">2</span>
+                    <span><span class="mono">generate_expense_report.js</span> <span class="arrow">→</span> expense_report.html</span>
+                </li>
+                <li>
+                    <span class="step-num">3</span>
+                    <span>Google Sheets 下載購物 CSV → <span class="mono">new_data_gid_1320702581.csv</span></span>
+                </li>
+                <li>
+                    <span class="step-num">4</span>
+                    <span><span class="mono">generate_shopping_report.js</span> <span class="arrow">→</span> shopping_report.html</span>
+                </li>
+                <li>
+                    <span class="step-num">5</span>
+                    <span>git add · commit · push（失敗即中斷＋LINE ⚠ 告警，2026/07/23 新增，見上方 07/23 事故備注）</span>
+                </li>
+            </ul>
+            <div>資料來源：
+                <span class="src-tag">Google Sheets 旅遊花費</span>
+                <span class="src-tag">Google Sheets 購物清單</span>
+            </div>
+            <div style="margin-top:10px;">Log：<span class="mono">travel/update_log.txt</span></div>
+            <div style="margin-top:6px;font-size:0.82rem;color:var(--muted);">同日已完成則跳過（2026/07/23 新增，比照 daily/weekly）</div>
+        </div>
+
+        <!-- update_dmp_alltime_top10.bat -->
+        <div class="bat-card">
+            <h3>📁 update_dmp_alltime_top10.bat</h3>
+            <div class="trigger">
+                排程：<span class="mono">Qware_DMP_AllTime_Top10_Monthly</span>（2026/07/23 新增）<br>
+                觸發：每月 1 日 10:00（刻意避開 08:00 daily/GA 群聚）／ 執行目錄：<code style="color:#ce93d8">D:\2025\AI\MongoDB</code>
+            </div>
+            <ul class="step-list">
+                <li>
+                    <span class="step-num">1</span>
+                    <span><span class="mono">generate_alltime_top10_v3.js</span> <span class="arrow">→</span>
+                    <a href="https://lard23chen.github.io/report/A_DMP_PageView_Report_AllTime_Top10.html" target="_blank">A_DMP_PageView_Report_AllTime_Top10.html</a> + 10 份節目明細頁</span>
+                </li>
+                <li>
+                    <span class="step-num">2</span>
+                    <span>增量架構：狀態（已處理進度 + 全節目瀏覽量 + Top10 明細）內嵌於報表 HTML；首次執行為全量 bootstrap（~40 分鐘），之後每次只查新資料（秒級到低分鐘級）</span>
+                </li>
+                <li>
+                    <span class="step-num">3</span>
+                    <span>不重複訪客改用自製 HyperLogLog 估算（固定 ~16KB／節目，誤差實測 &lt;1%），取代會無限增長的完整訪客 ID 清單</span>
+                </li>
+                <li>
+                    <span class="step-num">4</span>
+                    <span>git add · commit · push（失敗即中斷＋LINE ⚠ 告警）</span>
+                </li>
+            </ul>
+            <div>資料來源：<span class="src-tag">trek-first-party-dmp.event</span></div>
+            <div style="margin-top:10px;">Log：<span class="mono">dmp_alltime_top10_log.txt</span></div>
+            <div style="margin-top:6px;font-size:0.82rem;color:var(--muted);">本月已完成則跳過（同 daily/weekly/travel 的重複執行保護，週期改為月）</div>
+        </div>
+
+    </div>
+
+    <!-- Error Guide -->
+    <div class="error-box">
+        <h4>⚠️ 錯誤碼 2147946720（0x800710E0）排查指南</h4>
+        <p style="margin:0 0 10px;font-size:0.88rem;color:var(--muted);">常見原因</p>
+        <ul>
+            <li>BAT 未設定 WorkingDirectory，Node.js 找不到相對路徑腳本</li>
+            <li>MongoDB 連線逾時（網路異常或連接數超限）</li>
+            <li>Git commit 無差異（<code>nothing to commit</code>），bat 以非零碼退出</li>
+        </ul>
+        <p style="margin:12px 0 6px;font-size:0.88rem;color:var(--muted);">排查步驟</p>
+        <ol class="steps">
+            <li>查看 <span class="mono">daily_log.txt</span> 確認 Node.js 輸出內容</li>
+            <li>確認 <span class="mono">Qware_Daily_Report_Update_Final</span> 的 Last Result 是否為 0（成功即代表報表已更新）</li>
+            <li>手動執行 BAT，觀察 Command Prompt 錯誤訊息</li>
+            <li>若為 Git commit 問題，於 BAT 加入 <code>git diff --quiet || git commit -m "..."</code> 條件判斷</li>
+        </ol>
+    </div>
+
+    <!-- Maintenance -->
+    <div class="card-block">
+        <p class="sec-title">🛠️ 新增排程程式規範</p>
+        <div class="maint-box">
+            <ol>
+                <li>撰寫 <code>.bat</code> 或 <code>.ps1</code>，結果輸出至 <code>*_log.txt</code></li>
+                <li>在 Windows 工作排程器建立任務，務必設定 <code>WorkingDirectory</code></li>
+                <li>更新 <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_SCHEDULED_TASKS.md" target="_blank">REPORT_SPEC_SCHEDULED_TASKS.md</a> §1 排程總覽表</li>
+                <li>更新本 HTML 儀表板的排程表格與 BAT 卡片</li>
+                <li>在 <a href="https://lard23chen.github.io/report/HTML_Report_Catalog.html" target="_blank">HTML_Report_Catalog.html</a> 總目錄「⏰ 自動排程程式」區段新增一列</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Related Links -->
+    <div class="card-block">
+        <p class="sec-title">🔗 相關規範文檔</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+            <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_DAILY_REVENUE.md" class="out-link" target="_blank">📄 每日營業報表規範</a>
+            <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_GA_EVENTS_TRAFFIC.md" class="out-link" target="_blank">📄 GA 流量報表規範</a>
+            <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_AZURE_DAILY.md" class="out-link" target="_blank">📄 Azure 費用報表規範</a>
+            <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_TRAVEL_2026.md" class="out-link" target="_blank">📄 旅遊報表規範</a>
+            <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_D_GA_CLICKDATA_202606.md" class="out-link" target="_blank">📄 D GA 點擊量報表規範</a>
+            <a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_SCHEDULED_TASKS.md" class="out-link" target="_blank">📄 排程程式規範（MD）</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

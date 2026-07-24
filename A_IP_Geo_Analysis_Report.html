@@ -1,0 +1,523 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>本月 IP 地理分析報表 (A系統) | 2026年06月</title>
+    <!-- IP Allowlist: internal network only -->
+    <style>html { visibility: hidden; }</style>
+    <script>
+        (function () {
+            var ALLOWED = [
+                '211.75.181.109', '211.75.181.110',
+                '220.130.6.196',  '220.130.6.197',  '220.130.6.198',
+                '220.130.134.238','220.130.134.239', '220.130.134.240',
+                '133.149.194.24'
+            ];
+            function deny(ip) {
+                document.documentElement.style.visibility = 'visible';
+                document.body.style.cssText = 'margin:0;padding:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;';
+                document.body.innerHTML =
+                    '<div style="text-align:center;font-family:Outfit,sans-serif;padding:40px">' +
+                    '<div style="font-size:5rem;margin-bottom:20px">🔒</div>' +
+                    '<h1 style="color:#ef4444;font-size:2rem;margin:0 0 14px">存取被拒絕</h1>' +
+                    '<p style="color:#94a3b8;margin:0 0 8px">您目前的 IP 位址：' +
+                    '<code style="background:#1e293b;padding:2px 10px;border-radius:4px;color:#f472b6">' + ip + '</code></p>' +
+                    '<p style="color:#64748b;font-size:0.88rem">此頁面僅限內部網路存取 &middot; Access restricted to internal network only</p>' +
+                    '</div>';
+            }
+            var timer = setTimeout(function () { deny('timeout'); }, 6000);
+            fetch('https://api.ipify.org?format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    clearTimeout(timer);
+                    if (ALLOWED.indexOf(d.ip) !== -1) {
+                        document.documentElement.style.visibility = 'visible';
+                    } else {
+                        deny(d.ip);
+                    }
+                })
+                .catch(function () { clearTimeout(timer); deny('unknown'); });
+        })();
+    </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--warning:#f59e0b;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
+header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:1.1rem;font-weight:700;color:var(--accent);white-space:nowrap}
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.filter-bar input[type=date]{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 9px;font-size:0.82rem;outline:none}
+.filter-bar input[type=date]:focus{border-color:var(--accent)}
+.filter-bar select{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:0.82rem;outline:none;cursor:pointer}
+.btn{padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;transition:opacity .15s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:rgba(255,255,255,0.07);color:var(--muted)}
+.btn:hover{opacity:.85}
+main{padding:22px 28px;max-width:1400px;margin:0 auto}
+.section-title{font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 11px;display:flex;align-items:center;gap:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:13px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px 18px}
+.kpi-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
+.kpi-value{font-size:1.2rem;font-weight:700}
+.kpi-sub{font-size:0.76rem;color:var(--muted);margin-top:3px;line-height:1.4}
+.tw{color:#4ade80}.ov{color:#60a5fa}.int{color:#f59e0b}.uk{color:var(--muted)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:780px){.chart-grid{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:.75rem 1rem;color:var(--text);border-bottom:2px solid var(--border);font-weight:600;font-size:.83rem}
+th.r{text-align:right}
+footer{text-align:center;padding:22px;color:var(--muted);font-size:.78rem;border-top:1px solid var(--border);margin-top:36px}
+#range-info{font-size:.8rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🌐 本月 IP 地理分析報表 (A系統)</h1>
+    <div style="font-size:.8rem;color:#4ade80;font-weight:600;">2026年06月</div>
+    <div id="range-info" style="font-size:.78rem;color:var(--muted)">產生時間：2026/6/3 下午2:23:18</div>
+  </div>
+  <div class="filter-bar">
+    <span style="color:var(--muted);font-size:.82rem;">查詢區間</span>
+    <input type="date" id="startDate" value="2026-06-01" min="2026-06-01" max="2026-06-02">
+    <select id="startHour"><option value="0" selected>00:00</option><option value="1">00:30</option><option value="2">01:00</option><option value="3">01:30</option><option value="4">02:00</option><option value="5">02:30</option><option value="6">03:00</option><option value="7">03:30</option><option value="8">04:00</option><option value="9">04:30</option><option value="10">05:00</option><option value="11">05:30</option><option value="12">06:00</option><option value="13">06:30</option><option value="14">07:00</option><option value="15">07:30</option><option value="16">08:00</option><option value="17">08:30</option><option value="18">09:00</option><option value="19">09:30</option><option value="20">10:00</option><option value="21">10:30</option><option value="22">11:00</option><option value="23">11:30</option><option value="24">12:00</option><option value="25">12:30</option><option value="26">13:00</option><option value="27">13:30</option><option value="28">14:00</option><option value="29">14:30</option><option value="30">15:00</option><option value="31">15:30</option><option value="32">16:00</option><option value="33">16:30</option><option value="34">17:00</option><option value="35">17:30</option><option value="36">18:00</option><option value="37">18:30</option><option value="38">19:00</option><option value="39">19:30</option><option value="40">20:00</option><option value="41">20:30</option><option value="42">21:00</option><option value="43">21:30</option><option value="44">22:00</option><option value="45">22:30</option><option value="46">23:00</option><option value="47">23:30</option></select>
+    <span style="color:var(--muted)">~</span>
+    <input type="date" id="endDate" value="2026-06-02" min="2026-06-01" max="2026-06-02">
+    <select id="endHour"><option value="0">00:00</option><option value="1">00:30</option><option value="2">01:00</option><option value="3">01:30</option><option value="4">02:00</option><option value="5">02:30</option><option value="6">03:00</option><option value="7">03:30</option><option value="8">04:00</option><option value="9">04:30</option><option value="10">05:00</option><option value="11">05:30</option><option value="12">06:00</option><option value="13">06:30</option><option value="14">07:00</option><option value="15">07:30</option><option value="16">08:00</option><option value="17">08:30</option><option value="18">09:00</option><option value="19">09:30</option><option value="20">10:00</option><option value="21">10:30</option><option value="22">11:00</option><option value="23">11:30</option><option value="24">12:00</option><option value="25">12:30</option><option value="26">13:00</option><option value="27">13:30</option><option value="28">14:00</option><option value="29">14:30</option><option value="30">15:00</option><option value="31">15:30</option><option value="32">16:00</option><option value="33">16:30</option><option value="34">17:00</option><option value="35">17:30</option><option value="36">18:00</option><option value="37">18:30</option><option value="38">19:00</option><option value="39">19:30</option><option value="40">20:00</option><option value="41">20:30</option><option value="42">21:00</option><option value="43">21:30</option><option value="44">22:00</option><option value="45">22:30</option><option value="46">23:00</option><option value="47" selected>23:30</option></select>
+    <button class="btn btn-primary" onclick="applyFilter()">查詢</button>
+    <button class="btn btn-ghost" onclick="setThisMonth()">本月</button>
+    <button class="btn btn-ghost" onclick="setPreset(30)">近30天</button>
+    <button class="btn btn-ghost" onclick="setPreset(90)">近90天</button>
+    <button class="btn btn-ghost" onclick="resetFilter()">全部</button>
+  </div>
+  <a href="report_index.html" style="color:var(--muted);font-size:.8rem;text-decoration:none;white-space:nowrap;">← 返回</a>
+</header>
+
+<main>
+<div class="section-title">📊 台灣 vs 海外 總覽</div>
+<div class="kpi-grid" id="kpi-grid"></div>
+
+<div class="chart-grid">
+  <div class="card"><div style="font-weight:600;margin-bottom:14px">海外前 10 國家（購票金額）</div><canvas id="countryBar" height="260"></canvas></div>
+  <div class="card"><div style="font-weight:600;margin-bottom:14px">海外前 10 國家（購票筆數 vs 張數）</div><canvas id="countryCountBar" height="260"></canvas></div>
+</div>
+<div class="chart-grid">
+  <div class="card"><div style="font-weight:600;margin-bottom:14px">年齡分布：台灣 vs 海外</div><canvas id="ageBar" height="260"></canvas></div>
+  <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+    <div style="font-weight:600;margin-bottom:12px">海外前 10 國家 綜合數據</div>
+    <table style="font-size:.8rem;" id="mini-table">
+      <thead><tr>
+        <th style="padding:5px 8px;border-bottom:1px solid var(--border)">國家</th>
+        <th class="r" style="padding:5px 8px;border-bottom:1px solid var(--border);color:#60a5fa">筆數</th>
+        <th class="r" style="padding:5px 8px;border-bottom:1px solid var(--border);color:#a78bfa">張數</th>
+        <th class="r" style="padding:5px 8px;border-bottom:1px solid var(--border);color:#4ade80">金額</th>
+      </tr></thead>
+      <tbody id="mini-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section-title">🌍 海外國家明細（依購票金額排序）</div>
+<div class="card" style="padding:0;overflow-x:auto">
+  <table>
+    <thead><tr>
+      <th>國家</th><th class="r">購票筆數</th><th class="r">購票張數</th>
+      <th class="r" style="color:#4ade80">購票金額</th><th class="r">退票筆數</th>
+    </tr></thead>
+    <tbody id="country-tbody"></tbody>
+  </table>
+</div>
+
+<div class="section-title">💳 付款方式：台灣 vs 海外</div>
+<div class="card" style="padding:0;overflow-x:auto">
+  <table>
+    <thead><tr>
+      <th>付款方式</th>
+      <th class="r" style="color:#4ade80">🇹🇼 台灣訂單數</th>
+      <th class="r" style="color:#4ade80">🇹🇼 台灣金額</th>
+      <th class="r" style="color:#60a5fa">🌏 海外訂單數</th>
+      <th class="r" style="color:#60a5fa">🌏 海外金額</th>
+    </tr></thead>
+    <tbody id="pay-tbody"></tbody>
+  </table>
+</div>
+
+<div class="section-title">❓ IP 無法識別訂單列表</div>
+<div class="card" style="padding:0;overflow-x:auto">
+  <div style="padding:10px 20px;font-size:.82rem;color:var(--muted)" id="unk-count"></div>
+  <table>
+    <thead><tr>
+      <th>訂單編號</th><th>節目名稱</th><th>會員編號</th><th>IP</th>
+      <th class="r">張數</th><th>座位資訊</th>
+    </tr></thead>
+    <tbody id="unk-tbody"></tbody>
+  </table>
+</div>
+
+<div class="section-title">📊 購票分布圓餅圖</div>
+<div class="chart-grid">
+  <div class="card"><div style="font-weight:600;margin-bottom:14px">購票金額分布</div><canvas id="revPie" height="220"></canvas></div>
+  <div class="card"><div style="font-weight:600;margin-bottom:14px">訂單數分布</div><canvas id="orderPie" height="220"></canvas></div>
+</div>
+</main>
+<footer>A系統 IP 地理分析 &copy; 2026 Qware Analytics &nbsp;|&nbsp; 資料來源：Qware_A_Ticket_data_Daily (MongoDB)</footer>
+
+<script>
+Chart.register(ChartDataLabels);
+
+const DAILY = [{"d":"2026-06-01","c":"TW","g":"TW","o":1311,"t":3436,"r":3325565,"ro":56,"rt":103,"rf":9240,"hd":[39,16,19,14,5,7,4,3,4,2,0,3,1,2,3,6,8,19,18,25,36,41,26,30,21,25,30,26,39,23,32,52,62,43,32,36,49,38,36,43,42,52,45,52,64,66,44,28],"ht":[79,27,31,31,9,8,5,5,5,2,0,6,1,4,3,17,16,38,37,41,118,392,82,64,42,46,56,114,349,50,66,108,129,132,73,75,96,79,79,93,92,110,93,104,133,149,99,48],"hr":[75694,33357,27649,29990,4400,15940,17450,8860,4100,1600,0,23420,1000,3100,7280,22300,18200,34520,42240,46980,90026,53622,74891,79710,46979,66766,70880,322620,455030,60080,70856,92995,88320,80940,48159,54450,90859,103765,85278,86210,81710,78870,90118,104569,129886,140160,92528,67208],"p":{"信用卡":[1230,2367335],"LINE Pay":[31,202880],"現金":[44,715270],"ATM虛擬帳號":[3,17760],"行動支付":[3,22320]},"a":{"40-49":807,"20-29":734,"50-59":184,"30-39":739,"60+":16,"<20":90}},{"d":"2026-06-01","c":"INTERNAL","g":"INTERNAL","o":196,"t":404,"r":314090,"ro":2,"rt":2,"rf":190,"hd":[2,2,1,0,1,0,0,0,0,1,0,1,0,2,0,4,1,4,2,3,3,5,3,4,4,2,6,0,3,3,3,6,11,9,5,11,8,7,14,13,10,16,7,4,6,6,1,2],"ht":[2,3,1,0,1,0,0,0,0,4,0,1,0,4,0,8,3,6,3,7,8,12,7,12,8,3,11,0,10,4,4,12,19,22,9,19,18,14,35,23,22,38,14,7,17,9,1,3],"hr":[1650,1799,3200,0,1480,0,0,0,0,2600,0,600,0,1900,0,3850,2900,5500,1500,4500,5900,8800,4400,8600,6400,1700,8300,0,5000,1800,6000,9800,12400,15600,5800,13430,12400,9750,38657,14650,17398,27978,10500,7400,11000,9798,900,8250]},{"d":"2026-06-01","c":"KR","g":"Overseas","o":0,"t":0,"r":0,"ro":1,"rt":1,"rf":150,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},{"d":"2026-06-01","c":"US","g":"Overseas","o":20,"t":48,"r":49030,"ro":0,"rt":0,"rf":0,"hd":[1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,0,0,0,0,1,0,2,0,0,0,1,0,1,0,0,1,0,0,0,1,2,0,2,1,0,1,1],"ht":[2,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,2,2,2,0,3,0,0,0,0,1,0,6,0,0,0,1,0,1,0,0,4,0,0,0,4,4,0,7,3,0,1,1],"hr":[2600,0,0,0,2600,0,0,0,0,0,0,0,0,0,0,0,800,1100,7200,0,2300,0,0,0,0,5800,0,4200,0,0,0,5580,0,250,0,0,2400,0,0,0,2400,2000,0,3800,3000,0,1000,2000],"p":{"信用卡":[19,43450],"行動支付":[1,5580]},"a":{"40-49":20,"20-29":4,"50-59":9,"30-39":12,"<20":3}},{"d":"2026-06-01","c":"JP","g":"Overseas","o":1,"t":2,"r":11160,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11160,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[1,11160]},"a":{"30-39":2}},{"d":"2026-06-01","c":"MO","g":"Overseas","o":1,"t":3,"r":3000,"ro":0,"rt":0,"rf":0,"hd":[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[3000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[1,3000]},"a":{"30-39":3}},{"d":"2026-06-01","c":"HK","g":"Overseas","o":9,"t":16,"r":40780,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,2,0,0,0,0,1,0,0,1,0,0,1,1,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,2,0,0,6,0,0,0,0,2,0,0,2,0,0,1,1,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1200,0,0,0,0,0,0,0,0,0,0,1000,0,1400,0,0,33480,0,0,0,0,1000,0,0,1600,0,0,500,600,0],"p":{"信用卡":[9,40780]},"a":{"20-29":8,"30-39":3,"<20":2,"40-49":2}},{"d":"2026-06-01","c":"GB","g":"Overseas","o":2,"t":3,"r":7560,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,1000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6560,0,0,0,0],"p":{"信用卡":[2,7560]},"a":{"20-29":3}},{"d":"2026-06-01","c":"PH","g":"Overseas","o":1,"t":2,"r":11160,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11160,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[1,11160]},"a":{"20-29":2}},{"d":"2026-06-01","c":"MY","g":"Overseas","o":2,"t":3,"r":3599,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2600,0,0,999,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[2,3599]},"a":{"20-29":2,"30-39":1}},{"d":"2026-06-01","c":"NZ","g":"Overseas","o":1,"t":1,"r":700,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,700,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[1,700]},"a":{"20-29":1}},{"d":"2026-06-01","c":"AU","g":"Overseas","o":2,"t":3,"r":12180,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,1],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11100,0,0,0,0,0,1080],"p":{"信用卡":[2,12180]},"a":{"30-39":2,"20-29":1}},{"d":"2026-06-01","c":"NO","g":"Overseas","o":2,"t":5,"r":4700,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4700,0,0,0,0,0,0,0,0],"p":{"信用卡":[2,4700]},"a":{"40-49":5}},{"d":"2026-06-01","c":"VN","g":"Overseas","o":1,"t":2,"r":1600,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1600,0,0,0,0,0],"p":{"信用卡":[1,1600]},"a":{"30-39":2}},{"d":"2026-06-02","c":"TW","g":"TW","o":1439,"t":5694,"r":4070906,"ro":23,"rt":40,"rf":2775,"hd":[29,27,14,12,6,3,4,5,6,1,1,3,1,5,2,12,11,22,18,22,29,30,43,26,25,25,29,48,53,43,44,36,38,54,44,39,41,51,54,45,52,46,59,51,70,57,54,49],"ht":[61,55,21,22,10,4,6,5,8,1,1,3,1,8,3,26,16,47,37,35,79,179,335,54,222,159,70,247,479,345,171,88,93,660,719,180,92,103,87,93,103,94,111,118,137,106,111,89],"hr":[80780,57070,18825,27860,26570,2300,3500,3700,10330,5580,5580,1800,600,9500,12460,24350,21060,43460,36340,44989,43380,191730,408360,40710,170140,44940,109330,86838,113109,289910,66380,66460,103760,210557,476548,148980,64589,82510,100890,97839,95540,75540,113427,76535,114200,86810,75290,79950],"p":{"信用卡":[1304,2174416],"LINE Pay":[22,163160],"現金":[108,1698460],"行動支付":[4,29290],"ATM虛擬帳號":[1,5580]},"a":{"20-29":763,"30-39":864,"40-49":748,"<20":122,"50-59":168,"60+":20}},{"d":"2026-06-02","c":"US","g":"Overseas","o":23,"t":55,"r":49520,"ro":1,"rt":1,"rf":165,"hd":[0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1,2,2,2,0,2,1,1,0,0,1,1,1,0,0,0,1,0,0,0,1,1,1,0,1,1],"ht":[0,0,0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,2,0,0,2,5,6,5,0,3,2,3,0,0,1,3,3,0,0,0,2,0,0,0,4,3,2,0,1,2],"hr":[0,0,0,0,0,0,0,1200,0,0,0,1950,0,0,0,0,0,0,0,4000,0,0,800,8380,4200,3760,0,1750,1400,2100,0,0,3300,3200,3000,0,0,0,600,0,0,0,2500,2100,1600,0,1480,2200],"p":{"信用卡":[23,49520]},"a":{"30-39":20,"40-49":15,"20-29":18,"50-59":2}},{"d":"2026-06-02","c":"INTERNAL","g":"INTERNAL","o":218,"t":409,"r":394294,"ro":2,"rt":4,"rf":190,"hd":[3,3,0,0,1,0,0,0,0,1,0,1,0,1,0,3,0,5,3,1,2,3,4,7,6,5,4,4,5,5,4,1,12,4,5,7,10,9,11,6,11,6,16,10,16,9,5,9],"ht":[13,6,0,0,3,0,0,0,0,1,0,1,0,1,0,3,0,13,3,2,4,7,6,9,6,11,8,10,8,9,5,1,24,8,12,16,17,20,18,11,26,8,29,24,26,18,9,13],"hr":[26180,3650,0,0,2300,0,0,0,0,600,0,400,0,800,0,3799,0,37640,4600,1400,4000,4600,2350,11978,11100,4600,4380,5000,17420,6450,6799,1000,16150,2450,8600,13200,10150,11200,9550,12880,17900,4950,20050,22148,26940,28660,20320,8100]},{"d":"2026-06-02","c":"JP","g":"Overseas","o":5,"t":14,"r":12400,"ro":0,"rt":0,"rf":0,"hd":[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1,0,1,0,0,0,0,0],"ht":[0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,0,2,0,5,0,0,0,0,0],"hr":[0,0,2200,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4800,0,1400,0,4000,0,0,0,0,0],"p":{"信用卡":[5,12400]},"a":{"40-49":2,"20-29":12}},{"d":"2026-06-02","c":"KR","g":"Overseas","o":4,"t":8,"r":36200,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,2,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1400,0,0,0,0,0,11600,0,11600,0,0,0,0,11600,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[4,36200]},"a":{"30-39":2,"20-29":6}},{"d":"2026-06-02","c":"HK","g":"Overseas","o":8,"t":16,"r":49300,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,1,1,0,1,1,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,2,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,1,3,0,1,1,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1200,9200,0,0,0,0,0,0,0,0,0,21000,0,0,0,0,0,0,3600,9000,0,4800,500,0,0],"p":{"信用卡":[8,49300]},"a":{"20-29":5,"40-49":5,"30-39":6}},{"d":"2026-06-02","c":"RO","g":"Overseas","o":1,"t":1,"r":800,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,800,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[1,800]},"a":{"20-29":1}},{"d":"2026-06-02","c":"SE","g":"Overseas","o":1,"t":2,"r":1400,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1400,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[1,1400]},"a":{"20-29":2}},{"d":"2026-06-02","c":"DE","g":"Overseas","o":1,"t":1,"r":1200,"ro":0,"rt":0,"rf":0,"hd":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"ht":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"hr":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1200,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":{"信用卡":[1,1200]},"a":{"30-39":1}}];
+const UNK_ORDERS = [];
+const MIN_DATE = '2026-06-01';
+const MAX_DATE = '2026-06-02';
+const CN = {"TW":"台灣","US":"美國","JP":"日本","HK":"香港","SG":"新加坡","KR":"韓國","MO":"澳門","AU":"澳洲","MY":"馬來西亞","TH":"泰國","IN":"印度","GB":"英國","DE":"德國","FR":"法國","CA":"加拿大","VN":"越南","ID":"印尼","PH":"菲律賓","NL":"荷蘭","SE":"瑞典","BG":"保加利亞","BD":"孟加拉","NO":"挪威","CN":"中國","NZ":"紐西蘭","INTERNAL":"內部訂單","UNKNOWN":"無法識別"};
+const AGE_B = ['<20','20-29','30-39','40-49','50-59','60+'];
+const COLORS4 = ['#4ade80','#60a5fa','#f59e0b','#94a3b8'];
+const COLORS_BAR = ['#3b82f6','#f59e0b','#10b981','#f87171','#a78bfa','#fb923c','#34d399','#818cf8','#e879f9','#22d3ee'];
+
+const fmt   = n => Math.round(n).toLocaleString('en-US');
+const fmtM  = n => { const a=Math.abs(n); return a>=1e8?(n/1e8).toFixed(2)+'億':(n/1e4).toFixed(1)+'萬'; };
+const pct   = (v,t) => t ? (v/t*100).toFixed(1)+'%' : '—';
+const cname = c => CN[c] || c;
+const badge = (p,col='#94a3b8') => `<span style="font-size:.7rem;color:${col};margin-left:4px;">(${p})</span>`;
+const tdR   = (v,col='') => `<td style="text-align:right;padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);${col?'color:'+col:''}">${v}</td>`;
+const td0   = (v,col='') => `<td style="padding:.65rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);${col?'color:'+col:''}">${v}</td>`;
+
+// Chart instances
+const CHARTS = {};
+
+function initCharts() {
+  const pieOpts = (labFn, ttFn) => ({
+    plugins:{
+      legend:{position:'bottom',labels:{color:'#e2e8f0',padding:11,font:{size:11}}},
+      datalabels:{color:'#fff',font:{weight:'bold',size:11},formatter:(v,ctx)=>{
+        const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+        return t&&v?((v/t)*100).toFixed(1)+'%':'';
+      }},
+      tooltip:{callbacks:{label:c=>ttFn(c)}}
+    }
+  });
+
+  CHARTS.revPie = new Chart(document.getElementById('revPie'),{
+    type:'pie',
+    data:{labels:[],datasets:[{data:[],backgroundColor:COLORS4,borderWidth:2,borderColor:'#1e293b'}]},
+    options: pieOpts(null, c=>' NT$'+Math.round(c.raw).toLocaleString('en-US'))
+  });
+  CHARTS.orderPie = new Chart(document.getElementById('orderPie'),{
+    type:'pie',
+    data:{labels:[],datasets:[{data:[],backgroundColor:COLORS4,borderWidth:2,borderColor:'#1e293b'}]},
+    options: pieOpts(null, c=>' '+c.raw.toLocaleString()+'筆')
+  });
+
+  const barOpts = (isRev, grandRef) => ({
+    indexAxis:'y',
+    plugins:{
+      legend:{display:false},
+      datalabels:{color:'#e2e8f0',anchor:'end',align:'right',font:{size:10},
+        formatter:(v,ctx)=>{
+          const tot = window._grand ? (isRev ? window._grand.rev : window._grand.orders) : 1;
+          return isRev ? 'NT$'+v.toLocaleString('en-US')+' ('+(v/tot*100).toFixed(1)+'%)' : v+' ('+(v/tot*100).toFixed(1)+'%)';
+        }}
+    },
+    scales:{
+      x:{ticks:{color:'#94a3b8',callback:v=>isRev?'$'+v.toLocaleString():v},grid:{color:'rgba(255,255,255,0.05)'}},
+      y:{ticks:{color:'#e2e8f0'},grid:{display:false}}
+    }
+  });
+
+  CHARTS.countryBar = new Chart(document.getElementById('countryBar'),{
+    type:'bar',
+    data:{labels:[],datasets:[{label:'購票金額',data:[],backgroundColor:[],borderRadius:6}]},
+    options: barOpts(true)
+  });
+
+  CHARTS.countryCountBar = new Chart(document.getElementById('countryCountBar'),{
+    type:'bar',
+    data:{labels:[],datasets:[
+      {label:'購票筆數',data:[],backgroundColor:'#60a5fa',borderRadius:4},
+      {label:'購票張數',data:[],backgroundColor:'#a78bfa',borderRadius:4}
+    ]},
+    options:{
+      indexAxis:'y',
+      plugins:{
+        legend:{position:'top',labels:{color:'#e2e8f0',padding:10}},
+        datalabels:{color:'#fff',anchor:'end',align:'right',font:{size:10},
+          formatter:(v,ctx)=>{
+            const tot = window._grand ? (ctx.datasetIndex===0?window._grand.orders:window._grand.tickets) : 1;
+            return v+' ('+(v/tot*100).toFixed(1)+'%)';
+          }}
+      },
+      scales:{
+        x:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#e2e8f0'},grid:{display:false}}
+      }
+    }
+  });
+
+  CHARTS.ageBar = new Chart(document.getElementById('ageBar'),{
+    type:'bar',
+    data:{labels:AGE_B,datasets:[
+      {label:'🇹🇼 台灣',data:[],backgroundColor:'#4ade80',borderRadius:4},
+      {label:'🌏 海外',data:[],backgroundColor:'#60a5fa',borderRadius:4}
+    ]},
+    options:{
+      plugins:{legend:{position:'top',labels:{color:'#e2e8f0'}},datalabels:{display:false}},
+      scales:{
+        x:{ticks:{color:'#e2e8f0'},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,0.05)'}}
+      }
+    }
+  });
+}
+
+function aggregate(start, end, sh, eh) {
+  if(sh===undefined)sh=0; if(eh===undefined)eh=47;
+  const data = (start && end) ? DAILY.filter(e => e.d >= start && e.d <= end) : DAILY;
+  const useHour = sh!==0 || eh!==47;
+
+  const byC = {}, payG = {TW:{},Overseas:{}}, ageG = {TW:{},Overseas:{}};
+
+  data.forEach(e => {
+    let o=e.o, t=e.t, r=e.r;
+    if(useHour && e.hd){o=0;t=0;r=0;for(let h=sh;h<=eh;h++){o+=e.hd[h]||0;t+=e.ht[h]||0;r+=e.hr[h]||0;}}
+    if(useHour && o===0 && t===0 && r===0) return;
+    if (!byC[e.c]) byC[e.c] = {country:e.c,g:e.g,o:0,t:0,r:0,ro:0,rt:0,rf:0};
+    const s = byC[e.c];
+    s.o+=o; s.t+=t; s.r+=r; s.ro+=e.ro; s.rt+=e.rt; s.rf+=e.rf;
+    if (e.p && (e.g==='TW'||e.g==='Overseas')) {
+      for (const [m,[mo,mr]] of Object.entries(e.p)) {
+        if (!payG[e.g][m]) payG[e.g][m]={o:0,r:0};
+        payG[e.g][m].o+=mo; payG[e.g][m].r+=mr;
+      }
+    }
+    if (e.a && (e.g==='TW'||e.g==='Overseas')) {
+      for (const [b,cnt] of Object.entries(e.a)) {
+        ageG[e.g][b]=(ageG[e.g][b]||0)+cnt;
+      }
+    }
+  });
+
+  const rows = Object.values(byC).sort((a,b)=>b.r-a.r);
+  const tw   = rows.find(r=>r.country==='TW')       || {o:0,t:0,r:0,ro:0,rt:0,rf:0};
+  const int_ = rows.find(r=>r.country==='INTERNAL') || {o:0,t:0,r:0,ro:0,rt:0,rf:0};
+  const unk  = rows.find(r=>r.country==='UNKNOWN')  || {o:0,t:0,r:0,ro:0,rt:0,rf:0};
+  const ovR  = rows.filter(r=>r.country!=='TW'&&r.country!=='UNKNOWN'&&r.country!=='INTERNAL');
+  const ov   = ovR.reduce((a,r)=>({o:a.o+r.o,t:a.t+r.t,r:a.r+r.r,ro:a.ro+r.ro,rt:a.rt+r.rt,rf:a.rf+r.rf}),{o:0,t:0,r:0,ro:0,rt:0,rf:0});
+
+  const totalRev   = (tw.r||0)+(ov.r||0)+(int_.r||0)+(unk.r||0);
+  const grandRev   = (tw.r||0)+(ov.r||0);
+  const grandOrders= (tw.o||0)+(ov.o||0);
+  const grandTickets=(tw.t||0)+(ov.t||0);
+
+  return {tw,int_,unk,ov,ovR,payG,ageG,totalRev,grandRev,grandOrders,grandTickets};
+}
+
+function render(start, end, sh, eh) {
+  if(sh===undefined)sh=0; if(eh===undefined)eh=47;
+  const {tw,int_,unk,ov,ovR,payG,ageG,totalRev,grandRev,grandOrders,grandTickets} = aggregate(start,end,sh,eh);
+  window._grand = {rev:grandRev, orders:grandOrders, tickets:grandTickets};
+
+  const tRev = totalRev || 1;
+  const twPct  = ((tw.r||0)/tRev*100).toFixed(1);
+  const ovPct  = (ov.r/tRev*100).toFixed(1);
+  const intPct = ((int_.r||0)/tRev*100).toFixed(1);
+  const unkPct = ((unk.r||0)/tRev*100).toFixed(1);
+
+  // ── KPI cards ──────────────────────────────────────────
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">🇹🇼 台灣 購票金額</div>
+      <div class="kpi-value tw">NT$${fmtM(tw.r||0)}</div>
+      <div class="kpi-sub">占比 ${twPct}%&nbsp;|&nbsp;${fmt(tw.o||0)} 筆 / ${fmt(tw.t||0)} 張</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">🌏 海外 購票金額</div>
+      <div class="kpi-value ov">NT$${fmtM(ov.r)}</div>
+      <div class="kpi-sub">占比 ${ovPct}%&nbsp;|&nbsp;${fmt(ov.o)} 筆 / ${fmt(ov.t)} 張</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">🏢 內部訂單（內網IP）</div>
+      <div class="kpi-value int">NT$${fmtM(int_.r||0)}</div>
+      <div class="kpi-sub">占比 ${intPct}%&nbsp;|&nbsp;${fmt(int_.o||0)} 筆 / ${fmt(int_.t||0)} 張</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">❓ IP 無法識別</div>
+      <div class="kpi-value uk">NT$${fmtM(unk.r||0)}</div>
+      <div class="kpi-sub">占比 ${unkPct}%&nbsp;|&nbsp;${fmt(unk.o||0)} 筆</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">🌍 海外國家數</div>
+      <div class="kpi-value" style="color:var(--warning)">${ovR.length}</div>
+      <div class="kpi-sub">個不同國家/地區</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">🇹🇼 台灣 退票筆數</div>
+      <div class="kpi-value" style="color:#f87171">${fmt(tw.ro||0)}</div>
+      <div class="kpi-sub">退票張數 ${fmt(tw.rt||0)}張 / 手續費 NT$${fmt(tw.rf||0)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">🌏 海外 退票筆數</div>
+      <div class="kpi-value" style="color:#f87171">${fmt(ov.ro)}</div>
+      <div class="kpi-sub">退票張數 ${fmt(ov.rt)}張 / 手續費 NT$${fmt(ov.rf)}</div>
+    </div>`;
+
+  // ── Pie charts ─────────────────────────────────────────
+  CHARTS.revPie.data.labels = [`台灣 (${twPct}%)`,`海外 (${ovPct}%)`,`內部訂單 (${intPct}%)`,`未識別 (${unkPct}%)`];
+  CHARTS.revPie.data.datasets[0].data = [tw.r||0, ov.r, int_.r||0, unk.r||0];
+  CHARTS.revPie.update();
+
+  CHARTS.orderPie.data.labels = ['台灣','海外','內部訂單','未識別'];
+  CHARTS.orderPie.data.datasets[0].data = [tw.o||0, ov.o, int_.o||0, unk.o||0];
+  CHARTS.orderPie.update();
+
+  // ── Bar: country revenue ────────────────────────────────
+  const top10 = ovR.slice(0,10);
+  const cLabels = ['🇹🇼 台灣', ...top10.map(r=>cname(r.country))];
+  CHARTS.countryBar.data.labels = cLabels;
+  CHARTS.countryBar.data.datasets[0].data = [tw.r||0, ...top10.map(r=>r.r)];
+  CHARTS.countryBar.data.datasets[0].backgroundColor = ['#4ade80',...COLORS_BAR];
+  CHARTS.countryBar.update();
+
+  // ── Bar: country orders/tickets ─────────────────────────
+  CHARTS.countryCountBar.data.labels = cLabels;
+  CHARTS.countryCountBar.data.datasets[0].data = [tw.o||0, ...top10.map(r=>r.o)];
+  CHARTS.countryCountBar.data.datasets[1].data = [tw.t||0, ...top10.map(r=>r.t)];
+  CHARTS.countryCountBar.update();
+
+  // ── Bar: age ───────────────────────────────────────────
+  CHARTS.ageBar.data.datasets[0].data = AGE_B.map(b=>ageG.TW[b]||0);
+  CHARTS.ageBar.data.datasets[1].data = AGE_B.map(b=>ageG.Overseas[b]||0);
+  CHARTS.ageBar.update();
+
+  // ── Mini table (top10 综合) ────────────────────────────
+  const gr = grandRev||1, go = grandOrders||1, gt = grandTickets||1;
+  document.getElementById('mini-tbody').innerHTML =
+    `<tr style="background:rgba(74,222,128,0.08)">
+      <td style="padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.06);font-weight:700;color:#4ade80">🇹🇼 台灣</td>
+      <td style="text-align:right;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.06);color:#4ade80">${fmt(tw.o||0)}<span style="font-size:.68rem;opacity:.8;margin-left:2px">${pct(tw.o||0,go)}</span></td>
+      <td style="text-align:right;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.06);color:#4ade80">${fmt(tw.t||0)}<span style="font-size:.68rem;opacity:.8;margin-left:2px">${pct(tw.t||0,gt)}</span></td>
+      <td style="text-align:right;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.06);color:#4ade80">NT$${fmt(tw.r||0)}<span style="font-size:.68rem;opacity:.8;margin-left:2px">${pct(tw.r||0,gr)}</span></td>
+    </tr>` +
+    top10.map(r=>`<tr>
+      <td style="padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.04)">${cname(r.country)}</td>
+      <td style="text-align:right;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.04);color:#60a5fa">${fmt(r.o)}<span style="font-size:.68rem;opacity:.7;margin-left:2px">${pct(r.o,go)}</span></td>
+      <td style="text-align:right;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.04);color:#a78bfa">${fmt(r.t)}<span style="font-size:.68rem;opacity:.7;margin-left:2px">${pct(r.t,gt)}</span></td>
+      <td style="text-align:right;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.04);color:#4ade80">NT$${fmt(r.r)}<span style="font-size:.68rem;opacity:.7;margin-left:2px">${pct(r.r,gr)}</span></td>
+    </tr>`).join('');
+
+  // ── Country detail table ───────────────────────────────
+  const tdFirst = (rank, name, code, highlight) => {
+    const color = highlight ? '#4ade80' : 'var(--text)';
+    const border = 'border-bottom:1px solid rgba(255,255,255,0.05)';
+    return `<td style="padding:.65rem 1rem;${border}"><span style="display:inline-block;width:22px;text-align:center;font-weight:700;color:var(--muted)">${rank}</span> <span style="font-weight:${highlight?700:600};color:${color}">${name}</span> <span style="color:var(--muted);font-size:.76rem">(${code})</span></td>`;
+  };
+  const twRow = `<tr style="background:rgba(74,222,128,0.08)">
+    ${tdFirst('—','🇹🇼 台灣','TW',true)}
+    ${tdR(fmt(tw.o||0)+badge(pct(tw.o||0,go),'#4ade80'),'#4ade80')}
+    ${tdR(fmt(tw.t||0)+badge(pct(tw.t||0,gt),'#4ade80'),'#4ade80')}
+    ${tdR('NT$'+fmt(tw.r||0)+badge(pct(tw.r||0,gr),'#4ade80'),'#4ade80')}
+    ${tdR(fmt(tw.ro||0),'#f87171')}
+  </tr>`;
+  const ovDetailRows = ovR.map((r,i)=>`<tr>
+    ${tdFirst(i+1, cname(r.country), r.country, false)}
+    ${tdR(fmt(r.o)+badge(pct(r.o,go),'#60a5fa'))}
+    ${tdR(fmt(r.t)+badge(pct(r.t,gt),'#a78bfa'))}
+    ${tdR('NT$'+fmt(r.r)+badge(pct(r.r,gr),'#4ade80'),'#4ade80')}
+    ${tdR(fmt(r.ro),'#94a3b8')}
+  </tr>`).join('');
+  document.getElementById('country-tbody').innerHTML = twRow + ovDetailRows;
+
+  // ── Payment table ──────────────────────────────────────
+  const allPays = new Set([...Object.keys(payG.TW),...Object.keys(payG.Overseas)]);
+  const payRows = [...allPays].map(m=>({
+    m, two:payG.TW[m]?.o||0, twr:payG.TW[m]?.r||0,
+    ovo:payG.Overseas[m]?.o||0, ovr:payG.Overseas[m]?.r||0
+  })).sort((a,b)=>(b.twr+b.ovr)-(a.twr+a.ovr));
+  document.getElementById('pay-tbody').innerHTML = payRows.map(p=>`<tr>
+    ${td0(p.m,'',true)}
+    ${tdR(fmt(p.two))}
+    ${tdR('NT$'+fmt(p.twr),'#4ade80')}
+    ${tdR(fmt(p.ovo))}
+    ${tdR('NT$'+fmt(p.ovr),'#60a5fa')}
+  </tr>`).join('');
+
+  // ── Unknown IP orders table ────────────────────────────
+  const unkFiltered = (start&&end) ? UNK_ORDERS.filter(u=>u.d>=start&&u.d<=end) : UNK_ORDERS;
+  document.getElementById('unk-count').textContent = '共 ' + unkFiltered.length + ' 筆訂單（篩選後）';
+  document.getElementById('unk-tbody').innerHTML = unkFiltered.map(u=>`<tr>
+    <td style="padding:.6rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);font-family:monospace;font-size:.82rem;color:#94a3b8">${u.id}</td>
+    <td style="padding:.6rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05)">${u.name}</td>
+    <td style="padding:.6rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);font-family:monospace;font-size:.82rem">${u.mem}</td>
+    <td style="padding:.6rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);font-family:monospace;font-size:.82rem;color:var(--muted)">${u.ip}</td>
+    <td style="padding:.6rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right">${u.t}</td>
+    <td style="padding:.6rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--muted);font-size:.82rem">${u.seat}</td>
+  </tr>`).join('');
+
+  // ── Range info ─────────────────────────────────────────
+  const slotFmt = s => { const h=Math.floor(s/2),m=(s%2)*30; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); };
+  const hourLabel = (sh!==0||eh!==47) ? ` | 時段：${slotFmt(sh)}～${slotFmt(eh)}` : '';
+  const label = (start&&end) ? `查詢區間：${start} ~ ${end}${hourLabel}` : `資料範圍：${MIN_DATE} ~ ${MAX_DATE}（全部）${hourLabel}`;
+  document.getElementById('range-info').textContent = label + '  |  產生時間：2026/6/3 下午2:23:18';
+}
+
+function applyFilter() {
+  const s = document.getElementById('startDate').value;
+  const e = document.getElementById('endDate').value;
+  const sh = parseInt(document.getElementById('startHour').value);
+  const eh = parseInt(document.getElementById('endHour').value);
+  if (sh > eh) { alert('起始時間不可晚於結束時間'); return; }
+  if (s && e && s <= e) render(s, e, sh, eh);
+  else alert('請選擇有效的日期區間');
+}
+
+function resetFilter() {
+  document.getElementById('startDate').value = MIN_DATE;
+  document.getElementById('endDate').value   = MAX_DATE;
+  document.getElementById('startHour').value = '0';
+  document.getElementById('endHour').value   = '47';
+  render(null, null);
+}
+
+function setPreset(days) {
+  const end = new Date(MAX_DATE);
+  const start = new Date(end);
+  start.setDate(start.getDate() - days + 1);
+  const fmt2 = d => d.toISOString().split('T')[0];
+  const s = fmt2(start), e = fmt2(end);
+  document.getElementById('startDate').value = s;
+  document.getElementById('endDate').value   = e;
+  document.getElementById('startHour').value = '0';
+  document.getElementById('endHour').value   = '47';
+  render(s, e);
+}
+
+function setThisMonth() {
+  document.getElementById('startDate').value = '2026-06-01';
+  document.getElementById('endDate').value   = '2026-06-02';
+  document.getElementById('startHour').value = '0';
+  document.getElementById('endHour').value   = '47';
+  render('2026-06-01', '2026-06-02');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts();
+  const params = new URLSearchParams(window.location.search);
+  const sd = params.get('startDate'), ed = params.get('endDate');
+  const sh = params.get('startHour') !== null ? parseInt(params.get('startHour')) : 0;
+  const eh = params.get('endHour') !== null ? parseInt(params.get('endHour')) : 47;
+  if (sd && ed) {
+    document.getElementById('startDate').value = sd;
+    document.getElementById('endDate').value = ed;
+    document.getElementById('startHour').value = String(sh);
+    document.getElementById('endHour').value = String(eh);
+    render(sd, ed, sh, eh);
+  } else {
+    render('2026-06-01', '2026-06-02');
+  }
+});
+</script>
+</body>
+</html>

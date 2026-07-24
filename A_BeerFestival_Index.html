@@ -1,0 +1,304 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍺 高雄啤酒音樂節 - 報表目錄</title>
+    <!-- IP Allowlist: internal network only -->
+    <style>html { visibility: hidden; }</style>
+    <script>
+        (function () {
+            var ALLOWED = [
+                '211.75.181.109', '211.75.181.110',
+                '220.130.6.196',  '220.130.6.197',  '220.130.6.198',
+                '220.130.134.238','220.130.134.239', '220.130.134.240',
+                '133.149.194.24'
+            ];
+            function deny(ip) {
+                document.documentElement.style.visibility = 'visible';
+                document.body.style.cssText = 'margin:0;padding:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;';
+                document.body.innerHTML =
+                    '<div style="text-align:center;font-family:Outfit,sans-serif;padding:40px">' +
+                    '<div style="font-size:5rem;margin-bottom:20px">🔒</div>' +
+                    '<h1 style="color:#ef4444;font-size:2rem;margin:0 0 14px">存取被拒絕</h1>' +
+                    '<p style="color:#94a3b8;margin:0 0 8px">您目前的 IP 位址：' +
+                    '<code style="background:#1e293b;padding:2px 10px;border-radius:4px;color:#f472b6">' + ip + '</code></p>' +
+                    '<p style="color:#64748b;font-size:0.88rem">此頁面僅限內部網路存取 &middot; Access restricted to internal network only</p>' +
+                    '</div>';
+            }
+            var timer = setTimeout(function () { deny('timeout'); }, 6000);
+            fetch('https://api.ipify.org?format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    clearTimeout(timer);
+                    if (ALLOWED.indexOf(d.ip) !== -1) {
+                        document.documentElement.style.visibility = 'visible';
+                    } else {
+                        deny(d.ip);
+                    }
+                })
+                .catch(function () { clearTimeout(timer); deny('unknown'); });
+        })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent-color: #ffd000;
+            --accent-green: #4CAF50;
+            --accent-gold: #ffd700;
+        }
+        body {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 40px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            color: var(--accent-color);
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-bottom: 32px;
+            color: #a0a0a0;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link:hover { color: var(--accent-color); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            margin-bottom: 50px;
+        }
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background-color: #2c2c2c;
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-size: 1.1rem;
+            white-space: nowrap;
+        }
+        tr:hover { background-color: #2a2a2a; }
+        a {
+            color: #42A5F5;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        a:hover { text-decoration: underline; color: #64b5f6; }
+        .sys-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #121212;
+        }
+        .sys-a    { background-color: var(--accent-gold); }
+        .sys-other { background-color: #e91e63; }
+        .table-name {
+            font-family: monospace;
+            background: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ff9800;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .update-time {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .spec-link {
+            font-size: 0.85rem;
+            color: #ffccbc;
+            border: 1px solid #ff5722;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .spec-link:hover {
+            background: #ff5722;
+            color: white;
+            text-decoration: none;
+        }
+        .section-row td {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🍺🌸 高雄 7-ELEVEN 特別活動 報表目錄</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>編號</th>
+                <th>系統</th>
+                <th>更新時間</th>
+                <th>檔名 (超連結)</th>
+                <th>內容說明</th>
+                <th>視覺規範與功能組件</th>
+                <th>資料表 (Sources)</th>
+                <th>排程</th>
+            </tr>
+        </thead>
+                <tbody>
+            <!-- 2026 中華職棒明星賽 -->
+            <tr class="section-row" style="background: rgba(52, 211, 153, 0.08);">
+                <td colspan="8" style="color: #34d399;">⚾ 2026 台灣精品中華職棒明星對抗賽</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/06/25</td>
+                <td><a href="https://lard23chen.github.io/report/A_BaseballAllStar_2026.html" target="_blank">A_BaseballAllStar_2026.html</a></td>
+                <td>2026 台灣精品中華職棒明星對抗賽 專案銷售分析（2場次 7/18–7/19、開賣日 2026-06-22、開賣尖峰 14:18、票價/票別/座位區域/城市/付款分析）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/06/25</td>
+                <td><a href="https://lard23chen.github.io/report/A_BaseballAllStar_GA_Analysis_2026.html" target="_blank">A_BaseballAllStar_GA_Analysis_2026.html</a></td>
+                <td>2026 台灣精品中華職棒明星對抗賽 GA 流量分析（6/24 公眾開賣日、10:30–11:59、峰值 Session 3,439 @ 11:09、D-Min 21,066 @ 11:01、A-Min 9,766 @ 11:17）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_GA_EVENTS_TRAFFIC.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">QwareTrafficSession / QwareTrafficGAReadTime</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- 中華職棒36年 Rakuten -->
+            <tr class="section-row" style="background: rgba(244, 63, 94, 0.08);">
+                <td colspan="8" style="color: #f43f5e;">⚾ 中華職棒36年 Rakuten主場例行賽</td>
+            </tr>
+            <tr>
+                <td>9</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/06/26</td>
+                <td><a href="https://lard23chen.github.io/report/A_RakutenCPBL36_2025.html" target="_blank">A_RakutenCPBL36_2025.html</a></td>
+                <td>中華職棒36年 Rakuten主場例行賽 + 總冠軍賽 專案銷售分析（64場次、例行賽61場 4/8–9/29 + 總冠軍賽3場 10/11–10/26、兩場地：樂天桃園棒球場＋臺北大巨蛋、開賣日 2025-03-11、月別/場次/場地/票別/城市/付款分析）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_2025_Data + Qware_Member_data</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- 中華職棒37年 Rakuten -->
+            <tr class="section-row" style="background: rgba(244, 63, 94, 0.08);">
+                <td colspan="8" style="color: #f43f5e;">⚾ 中華職棒37年 Rakuten主場例行賽</td>
+            </tr>
+            <tr>
+                <td>10</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/06/25</td>
+                <td><a href="https://lard23chen.github.io/report/A_RakutenCPBL37_2026.html" target="_blank">A_RakutenCPBL37_2026.html</a></td>
+                <td>中華職棒37年 Rakuten主場例行賽 專案銷售分析（31場次 3/28–7/10、兩場地：樂天桃園棒球場＋臺北大巨蛋、開賣日 2026-03-04、開賣尖峰 10:01、月別/場次/場地/票別/城市/付款分析）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data + Qware_Member_data</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- 2026 -->
+            <tr class="section-row" style="background: rgba(255, 153, 0, 0.1);">
+                <td colspan="8" style="color: #ff9900;">🍺 2026 7-ELEVEN 高雄啤酒音樂節</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/06/25</td>
+                <td><a href="https://lard23chen.github.io/report/A_KaohsiungBeerFestival_2026.html" target="_blank">A_KaohsiungBeerFestival_2026.html</a></td>
+                <td>2026 7-ELEVEN 高雄啤酒音樂節 專案銷售分析（3場次 5/29–5/31、開賣日 2026-05-13、含票別/票價/城市/付款/座位區域分析）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_A_Ticket_data_Daily + Qware_Member_data</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/05/14 13:00</td>
+                <td><a href="https://lard23chen.github.io/report/A_BeerFestival_GA_Analysis_2026.html" target="_blank">A_BeerFestival_GA_Analysis_2026.html</a></td>
+                <td>2026 7-ELEVEN 高雄啤酒音樂節 GA 流量分析（5/13 vs 5/14，每分鐘 Session / D-Min / A-Min，含 30 分鐘分段彙整與走勢圖）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_GA_EVENTS_TRAFFIC.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">QwareTrafficSession / QwareTrafficGAReadTime</span></td>
+                <td>手動</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><span class="sys-badge sys-other">流量</span></td>
+                <td class="update-time">2026/05/14 13:00</td>
+                <td><a href="https://lard23chen.github.io/report/A_BeerFestival_OrderMonitor_2026.html" target="_blank">A_BeerFestival_OrderMonitor_2026.html</a></td>
+                <td>2026 7-ELEVEN 高雄啤酒音樂節 監控搶票訂單分析（5/13 vs 5/14，每分鐘 Booking / 訂單 / 刷卡 / QIT 等候室，含 30 分鐘分段彙整與走勢圖）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_BEER_ORDER_MONITOR.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Google Sheets 監控搶票訂單數</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- 高雄櫻花季 2026 -->
+            <tr class="section-row" style="background: rgba(244, 114, 182, 0.08);">
+                <td colspan="8" style="color: #f472b6;">🌸 2026 7-ELEVEN 高雄櫻花季 SAKURA FESTIVAL</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/05/19</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2026/A_KaohsiungSakuraFestival_2026.html" target="_blank">A_KaohsiungSakuraFestival_2026.html</a></td>
+                <td>2026 7-ELEVEN 高雄櫻花季 SAKURA FESTIVAL 專案銷售分析（3場次 3/13–3/15、開賣日 2025-12-23、票價/票別/城市/付款分析）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- 高雄櫻花季 2025 -->
+            <tr class="section-row" style="background: rgba(244, 114, 182, 0.08);">
+                <td colspan="8" style="color: #f472b6;">🌸 2025 7-ELEVEN 高雄櫻花季 SAKURA FESTIVAL</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/05/19</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2025/A_KaohsiungSakuraFestival_2025.html" target="_blank">A_KaohsiungSakuraFestival_2025.html</a></td>
+                <td>2025 7-ELEVEN 高雄櫻花季 SAKURA FESTIVAL 專案銷售分析（3場次 3/28–3/30、開賣日 2025-01-04 & 2025-01-05、含退票分析）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動</td>
+            </tr>
+
+            <!-- 2025 啤酒節 -->
+            <tr class="section-row" style="background: rgba(77, 208, 225, 0.08);">
+                <td colspan="8" style="color: #4dd0e1;">🍺 2025 7-ELEVEN 高雄啤酒音樂節</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><span class="sys-badge sys-a">A系統</span></td>
+                <td class="update-time">2026/05/18</td>
+                <td><a href="https://lard23chen.github.io/report-archive-2025/A_KaohsiungBeerFestival_2025.html" target="_blank">A_KaohsiungBeerFestival_2025.html</a></td>
+                <td>2025 7-ELEVEN 高雄啤酒音樂節 專案銷售分析（3場次 7/4–7/6、開賣日 2025-05-23、含因雨退票分析）</td>
+                <td><a href="https://github.com/lard23chen/report/blob/main/REPORT_SPEC_A_PROJECT_DEEP.md" class="spec-link" target="_blank">📄 規範文檔 (MD)</a></td>
+                <td><span class="table-name">Qware_Ticket_Data</span></td>
+                <td>手動</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

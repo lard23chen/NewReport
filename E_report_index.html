@@ -1,0 +1,859 @@
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析報表中心 (E系統) | Analytics Dashboard</title>
+    <!-- IP Allowlist: internal network only -->
+    <style>html { visibility: hidden; }</style>
+    <script>
+        (function () {
+            var ALLOWED = [
+                '211.75.181.109', '211.75.181.110',
+                '220.130.6.196',  '220.130.6.197',  '220.130.6.198',
+                '220.130.134.238','220.130.134.239', '220.130.134.240',
+                '133.149.194.24'
+            ];
+            function deny(ip) {
+                document.documentElement.style.visibility = 'visible';
+                document.body.style.cssText = 'margin:0;padding:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;';
+                document.body.innerHTML =
+                    '<div style="text-align:center;font-family:Outfit,sans-serif;padding:40px">' +
+                    '<div style="font-size:5rem;margin-bottom:20px">🔒</div>' +
+                    '<h1 style="color:#ef4444;font-size:2rem;margin:0 0 14px">存取被拒絕</h1>' +
+                    '<p style="color:#94a3b8;margin:0 0 8px">您目前的 IP 位址：' +
+                    '<code style="background:#1e293b;padding:2px 10px;border-radius:4px;color:#f472b6">' + ip + '</code></p>' +
+                    '<p style="color:#64748b;font-size:0.88rem">此頁面僅限內部網路存取 &middot; Access restricted to internal network only</p>' +
+                    '</div>';
+            }
+            var timer = setTimeout(function () { deny('timeout'); }, 6000);
+            fetch('https://api.ipify.org?format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    clearTimeout(timer);
+                    if (ALLOWED.indexOf(d.ip) !== -1) {
+                        document.documentElement.style.visibility = 'visible';
+                    } else {
+                        deny(d.ip);
+                    }
+                })
+                .catch(function () { clearTimeout(timer); deny('unknown'); });
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-color: #ef4444;
+            /* Changed to red for E-System distinction */
+            --accent-hover: #dc2626;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --purple-color: #8b5cf6;
+            --tab-active-bg: rgba(239, 68, 68, 0.2);
+            --tab-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .background-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(239, 68, 68, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
+        }
+
+        header {
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .container {
+            max-width: 1700px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #f87171, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+
+        /* Tabs Styles */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--tab-border);
+            padding-bottom: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-color);
+            background: var(--tab-active-bg);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, var(--accent-color), var(--purple-color));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .icon-revenue {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-color);
+        }
+
+        .icon-comparison {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .icon-special {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .icon-analysis {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--purple-color);
+        }
+
+        .card-content h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .card-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .card-meta {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+        }
+
+        .btn-link {
+            text-decoration: none;
+            color: #fff;
+            background-color: var(--accent-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-link:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+        .change-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            font-weight: 600;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .change-up {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .change-down {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <header>
+        <div class="logo">Qware Analytics</div>
+        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+            <script>document.write(new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' }))</script>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>報表中心 (E系統) <a href="report_index.html"
+                style="font-size: 0.5em; vertical-align: middle; margin-left: 10px; color: #3b82f6; text-decoration: none; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.1); padding: 4px 12px; border-radius: 999px; transition: all 0.3s;"
+                onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'"
+                onmouseout="this.style.background='rgba(59, 130, 246, 0.1)'">前往 A系統 ➜</a></h1>
+        <p class="subtitle">集中管理與查看所有自動生成的分析報表 (E系統)，追蹤營收趨勢與數據洞察。</p>
+
+
+        <!-- STATS_START -->
+            <div class="stats-section" style="margin-bottom: 3rem; background: var(--card-bg); border-radius: 16px; padding: 2rem; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: var(--text-primary); font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    📊 E系統 月份交易統計
+                </h3>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">最後更新: 2026/7/21 上午8:32:56 (每月一號 08:30)</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: separate; border-spacing: 0; color: var(--text-secondary); font-size: 0.95rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 1rem; color: var(--text-primary); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">月份</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--success-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">購票筆數</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--success-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">購票張數</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--accent-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">電子票張數</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--purple-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">紙票張數</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--success-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">購票金額</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--warning-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">退票筆數</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--warning-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">退票張數</th>
+                            <th style="text-align: right; padding: 1rem; color: var(--warning-color); border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; white-space: nowrap;">退票手續費</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2026-06</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">14,533<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 57.5%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">22,746<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 55.2%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">7,326<div style="font-size: 0.8em; color: var(--text-secondary);">(32.2%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">15,420<div style="font-size: 0.8em; color: var(--text-secondary);">(67.8%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 8,149,616<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 54.9%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">498<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 20.4%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">889<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 11.7%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 29,062<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 22.0%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2026-05</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">34,185<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 81.2%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">50,751<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 46.3%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">16,873<div style="font-size: 0.8em; color: var(--text-secondary);">(33.2%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">33,878<div style="font-size: 0.8em; color: var(--text-secondary);">(66.8%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 18,055,877<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 48.6%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">626<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 28.7%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,007<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 42.6%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 37,256<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 34.7%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2026-04</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">18,871<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 31.2%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">34,698<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 29.8%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">14,362<div style="font-size: 0.8em; color: var(--text-secondary);">(41.4%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">20,336<div style="font-size: 0.8em; color: var(--text-secondary);">(58.6%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 12,152,238<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 42.1%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">878<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 42.4%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,755<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 34.5%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 57,067<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 63.6%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2026-03</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">27,421<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 1.5%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">49,457<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 4.1%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">19,694<div style="font-size: 0.8em; color: var(--text-secondary);">(39.8%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">29,763<div style="font-size: 0.8em; color: var(--text-secondary);">(60.2%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 20,979,083<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 40.1%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,523<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 13.0%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">2,678<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 26.3%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 156,636<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 5.8%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2026-02</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">27,027<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 48.9%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">51,570<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 32.2%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">22,769<div style="font-size: 0.8em; color: var(--text-secondary);">(44.2%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">28,801<div style="font-size: 0.8em; color: var(--text-secondary);">(55.8%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 14,974,716<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 27.4%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,750<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 90.6%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">3,636<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 121.8%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 148,045<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 179.7%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2026-01</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">52,901<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 65.7%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">76,107<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 47.3%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">17,407<div style="font-size: 0.8em; color: var(--text-secondary);">(22.9%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">58,700<div style="font-size: 0.8em; color: var(--text-secondary);">(77.1%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 20,616,134<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 40.1%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">918<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 16.5%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,639<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 16.3%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 52,935<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 0.3%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2025-12</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">31,924<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 56.0%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">51,669<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 37.0%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">17,522<div style="font-size: 0.8em; color: var(--text-secondary);">(33.9%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">34,147<div style="font-size: 0.8em; color: var(--text-secondary);">(66.1%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 14,711,143<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 44.1%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,099<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 98.4%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,959<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 95.1%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 53,078<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 39.5%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2025-11</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">20,468<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 15.1%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">37,724<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 17.8%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">12,555<div style="font-size: 0.8em; color: var(--text-secondary);">(33.3%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">25,169<div style="font-size: 0.8em; color: var(--text-secondary);">(66.7%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 10,207,720<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 17.6%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">554<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 9.8%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,004<span class="change-badge change-up" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▼ 8.5%</span></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 38,050<span class="change-badge change-down" style="display: inline-block; white-space: nowrap; margin-left: 4px;">▲ 12.4%</span></td>
+                </tr>
+            
+                <tr style="transition: background-color 0.2s;">
+                    <td style="padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">2025-10</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">24,097</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 500; white-space: nowrap;">45,894</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">13,542<div style="font-size: 0.8em; color: var(--text-secondary);">(29.5%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">32,352<div style="font-size: 0.8em; color: var(--text-secondary);">(70.5%)</div></td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-primary); white-space: nowrap;">NT$ 12,382,649</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">614</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">1,097</td>
+                    <td style="text-align: right; padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); white-space: nowrap;">NT$ 33,855</td>
+                </tr>
+            
+            <tr style="background-color: rgba(255, 255, 255, 0.05); font-weight: bold;">
+                <td style="padding: 1rem; color: var(--text-primary); border-top: 2px solid rgba(255,255,255,0.1); white-space: nowrap;">總計</td>
+                <td style="text-align: right; padding: 1rem; color: var(--success-color); border-top: 2px solid rgba(255,255,255,0.1);">251,427</td>
+                <td style="text-align: right; padding: 1rem; color: var(--success-color); border-top: 2px solid rgba(255,255,255,0.1);">420,616</td>
+                <td style="text-align: right; padding: 1rem; color: var(--accent-color); border-top: 2px solid rgba(255,255,255,0.1);">142,050</td>
+                <td style="text-align: right; padding: 1rem; color: var(--purple-color); border-top: 2px solid rgba(255,255,255,0.1);">278,566</td>
+                <td style="text-align: right; padding: 1rem; color: var(--success-color); border-top: 2px solid rgba(255,255,255,0.1);">NT$ 132,229,176</td>
+                <td style="text-align: right; padding: 1rem; color: var(--warning-color); border-top: 2px solid rgba(255,255,255,0.1);">8,460</td>
+                <td style="text-align: right; padding: 1rem; color: var(--warning-color); border-top: 2px solid rgba(255,255,255,0.1);">15,664</td>
+                <td style="text-align: right; padding: 1rem; color: var(--warning-color); border-top: 2px solid rgba(255,255,255,0.1);">NT$ 605,984</td>
+            </tr>
+        
+                    </tbody>
+                </table>
+                <div style="margin-top:24px;"><h4 style="color:var(--accent-color);font-size:1rem;margin-bottom:10px;">最近月份趨勢分析 (MoM Analysis)</h4><div style="background:#252525;border-radius:10px;padding:14px 18px;border-left:3px solid #66BB6A;max-width:640px;line-height:1.8;font-size:0.92rem;"><div style="font-weight:700;margin-bottom:6px;color:var(--text-primary);">2026-06 較上月(2026-05)</div><div style="color:var(--text-secondary);">📊 <b style="color:var(--text-primary);">交易量：</b>購票筆數 19,652 筆（-57.5%），購票張數 28,005 張（-55.2%）。</div><div style="color:var(--text-secondary);">💰 <b style="color:var(--text-primary);">收入：</b>購票金額  NT$9,906,261（-54.9%），達 NT$8,149,616。</div><div style="color:var(--text-secondary);">🔻 <b style="color:var(--text-primary);">退票：</b>退票筆數 -20.4%、退票張數 -11.7%；退票手續費 -22.0%。</div></div></div>
+            </div>
+            </div>
+            <div style="margin-top: 1rem; text-align: right; font-size: 0.85rem; color: var(--text-secondary);">
+                * 數據來源: MongoDB (Qware_Ticket_Data_Esys) / 電子票=取票方式「電子票」、紙票=「紙本票」，占比為占當月購票張數比例
+            </div>
+            <div style="margin-top: 3rem; background: var(--card-bg); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05);">
+                <h4 style="color: var(--text-primary); margin-bottom: 1rem; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">📈 每月購票金額趨勢 <span style="font-size: 0.95rem; color: var(--text-secondary); font-weight: 400;">(Monthly Revenue Trend)</span></h4>
+                <div style="height: 350px; position: relative;">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const ctx = document.getElementById('monthlyTrendChart');
+                    if(ctx) {
+                        try {
+                            new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: ["2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"],
+                                    datasets: [{
+                                        label: '購票金額 (Revenue)',
+                                        data: [12382649,10207720,14711143,20616134,14974716,20979083,12152238,18055877,8149616],
+                                        borderColor: '#ef4444',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        fill: true,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { 
+                                        legend: { display: false },
+                                        datalabels: {
+                                            color: '#f8fafc',
+                                            anchor: 'end',
+                                            align: 'top',
+                                            formatter: function(value) {
+                                                if (value >= 1000000) {
+                                                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                                                } else if (value >= 10000) {
+                                                    return '$' + (value / 10000).toFixed(1) + 'W';
+                                                }
+                                                return '$' + value.toLocaleString();
+                                            },
+                                            font: {
+                                                weight: 'bold',
+                                                size: 11
+                                            }
+                                        }
+                                    },
+                                    layout: {
+                                        padding: {
+                                            top: 25
+                                        }
+                                    },
+                                    scales: {
+                                        y: { ticks: { callback: v => '$' + v.toLocaleString() } }
+                                    }
+                                },
+                                plugins: [window.ChartDataLabels]
+                            });
+                        } catch (e) {
+                            console.error('Chart.js failed to initialize', e);
+                        }
+                    }
+                });
+            </script>
+        
+            </div>
+            <!-- STATS_END -->
+
+            <!-- Tabs Navigation -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab1')">本月/上月報表</button>
+        <button class="tab-btn" onclick="switchTab('tab2')">報表比較分析</button>
+        <button class="tab-btn" onclick="switchTab('tab3')">歷史報表分析</button>
+        <button class="tab-btn" onclick="switchTab('tab4')">各節目報表分析</button>
+    </div>
+
+    <!-- Tab 1: Last Month -->
+    <div id="tab1" class="tab-content active">
+        <div class="grid" id="tab1-grid">
+            <!-- 2026-06 Card (本月) -->
+            <div class="card">
+                <div class="card-icon icon-revenue">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2026年06月 分析報表 (E系統) <span style="font-size:0.7em; background:rgba(239,68,68,0.15); color:#ef4444; padding:2px 8px; border-radius:999px; margin-left:6px;">本月</span></h3>
+                    <p>六月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Monthly</span>
+                    <a href="E_Qware_Revenue_Report_2026年06月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2026-05 Card (上月) -->
+            <div class="card">
+                <div class="card-icon icon-revenue">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2026年05月 分析報表 (E系統) <span style="font-size:0.7em; background:rgba(239,68,68,0.15); color:#ef4444; padding:2px 8px; border-radius:999px; margin-left:6px;">上月</span></h3>
+                    <p>五月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Monthly</span>
+                    <a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年05月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Comparison -->
+    <div id="tab2" class="tab-content">
+        <div class="grid" id="tab2-grid">
+            <!-- Content will be injected by script -->
+            <div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 2rem;">
+                暫無比較報表 (Updating...)
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Historical -->
+    <div id="tab3" class="tab-content">
+        <div class="grid" id="tab3-grid">
+            <!-- 2026-04 Card -->
+            <div class="card">
+                <div class="card-icon icon-analysis">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2026年04月 分析報表 (E系統)</h3>
+                    <p>四月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Historical</span>
+                    <a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年04月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2026-03 Card -->
+            <div class="card">
+                <div class="card-icon icon-analysis">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2026年03月 分析報表 (E系統)</h3>
+                    <p>三月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Historical</span>
+                    <a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年03月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2026-02 Card -->
+            <div class="card">
+                <div class="card-icon icon-analysis">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2026年02月 分析報表 (E系統)</h3>
+                    <p>二月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Historical</span>
+                    <a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年02月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2026-01 Card -->
+            <div class="card">
+                <div class="card-icon icon-analysis">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2026年01月 分析報表 (E系統)</h3>
+                    <p>完整的一月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Historical</span>
+                    <a href="https://lard23chen.github.io/report-archive-2026/E_Qware_Revenue_Report_2026年01月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2025-12 Card -->
+            <div class="card">
+                <div class="card-icon icon-analysis">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2025年12月 分析報表 (E系統)</h3>
+                    <p>12月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Historical</span>
+                    <a href="https://lard23chen.github.io/report-archive-2025/files/E_Qware_Revenue_Report_2025年12月_分析報表.zip" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2025-11 Card -->
+            <div class="card">
+                <div class="card-icon icon-analysis">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2025年11月 分析報表 (E系統)</h3>
+                    <p>11月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Historical</span>
+                    <a href="https://lard23chen.github.io/report-archive-2025/E_Qware_Revenue_Report_2025年11月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2025-10 Card -->
+            <div class="card">
+                <div class="card-icon icon-analysis">
+                    📊
+                </div>
+                <div class="card-content">
+                    <h3>2025年10月 分析報表 (E系統)</h3>
+                    <p>10月份營收數據分析，包含支付方式佔比與重要銷售指標。</p>
+                </div>
+                <div class="card-meta">
+                    <span class="badge">Historical</span>
+                    <a href="https://lard23chen.github.io/report-archive-2025/E_Qware_Revenue_Report_2025年10月_分析報表.html" class="btn-link">
+                        查看報表
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 4: Individual Events -->
+    <div id="tab4" class="tab-content">
+        <div class="grid" id="tab4-grid">
+            <!-- Content will be injected by script -->
+            <div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 2rem;">
+                暫無專案報表 (Updating...)
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <footer>
+        &copy; 2026 Qware Analytics (E-System). All rights reserved. Built with ❤️ for Data Insights.
+    </footer>
+
+    <script>
+        function switchTab(tabId) {
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // Add active class to clicked button
+            const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+            if (clickedBtn) {
+                clickedBtn.classList.add('active');
+            }
+
+            // Add active class to target content
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+    <script src="auth.js"></script>
+</body>
+
+</html>

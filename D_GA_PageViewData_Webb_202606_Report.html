@@ -1,0 +1,2823 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D系統 節目介紹頁瀏覽量分析 2026/06</title>
+<!-- IP Allowlist: internal network only -->
+<style>html { visibility: hidden; }</style>
+<script>
+  (function () {
+    var ALLOWED = ['211.75.181.109','211.75.181.110','220.130.6.196','220.130.6.197','220.130.6.198','220.130.134.238','220.130.134.239','220.130.134.240','133.149.194.24'];
+    function deny(ip) {
+      document.documentElement.style.visibility = 'visible';
+      document.body.style.cssText = 'margin:0;padding:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh;';
+      document.body.innerHTML = '<div style="text-align:center;font-family:Outfit,sans-serif;padding:40px"><div style="font-size:5rem;margin-bottom:20px">🔒</div><h1 style="color:#ef4444;font-size:2rem;margin:0 0 14px">存取被拒絕</h1><p style="color:#94a3b8;margin:0 0 8px">您目前的 IP 位址：<code style="background:#1e293b;padding:2px 10px;border-radius:4px;color:#f472b6">' + ip + '</code></p><p style="color:#64748b;font-size:0.88rem">此頁面僅限內部網路存取 · Access restricted to internal network only</p></div>';
+    }
+    var timer = setTimeout(function () { deny('timeout'); }, 6000);
+    fetch('https://api.ipify.org?format=json')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        clearTimeout(timer);
+        if (ALLOWED.indexOf(d.ip) !== -1) { document.documentElement.style.visibility = 'visible'; }
+        else { deny(d.ip); }
+      })
+      .catch(function () { clearTimeout(timer); deny('unknown'); });
+  })();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<style>
+:root {
+  --bg:      #0f172a;
+  --surface: #1a2235;
+  --card:    #1e293b;
+  --border:  #2d3d55;
+  --text:    #f1f5f9;
+  --muted:   #94a3b8;
+  --accent:  #3b82f6;
+  --green:   #10b981;
+  --amber:   #f59e0b;
+  --rose:    #f43f5e;
+  --purple:  #8b5cf6;
+  --cyan:    #06b6d4;
+  --orange:  #f97316;
+  /* category colours */
+  --sports:  #3b82f6;
+  --concert: #8b5cf6;
+  --kpop:    #f43f5e;
+  --anime:   #10b981;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Outfit','Noto Sans TC',sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; }
+
+/* ─── HEADER ─── */
+.hdr {
+  background: linear-gradient(135deg,#0f172a 0%,#1a2a4a 60%,#1e1b4b 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 40px 28px;
+}
+.hdr-badge { display:inline-block; background:var(--accent); color:#fff; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:3px 10px; border-radius:20px; margin-bottom:10px; }
+.hdr h1 { font-size:1.9rem; font-weight:800; color:#fff; margin-bottom:6px; }
+.hdr .sub { color:var(--muted); font-size:.88rem; }
+.hdr .sub span { color:var(--cyan); font-weight:600; }
+
+/* ─── MAIN ─── */
+.wrap { max-width:1040px; margin:0 auto; padding:28px 20px 60px; }
+
+/* ─── INSIGHT BAR ─── */
+.insight-bar {
+  display:flex; flex-wrap:wrap; gap:10px;
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:14px 18px; margin-bottom:24px;
+}
+.ins-item { display:flex; align-items:center; gap:8px; font-size:.84rem; }
+.ins-icon { font-size:1rem; flex-shrink:0; }
+.ins-label { color:var(--muted); }
+.ins-val { font-weight:700; color:var(--text); }
+
+/* ─── KPI CARDS ─── */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+.kpi { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+.kpi .kpi-val { font-size:2rem; font-weight:800; line-height:1.1; }
+.kpi .kpi-label { font-size:.75rem; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:.5px; }
+.kpi .kpi-sub { font-size:.8rem; color:var(--muted); margin-top:3px; }
+
+/* ─── CHART CARDS ─── */
+.chart-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+.chart-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; }
+.chart-card.full { grid-column:1/-1; }
+.chart-title { font-size:.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:14px; }
+.chart-wrap { position:relative; }
+
+/* ─── CATEGORY LEGEND ─── */
+.cat-legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+.cat-item { display:flex; align-items:center; gap:5px; font-size:.82rem; }
+.cat-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* ─── CATEGORY BADGE ─── */
+.badge {
+  display:inline-block; padding:2px 8px; border-radius:6px;
+  font-size:.72rem; font-weight:700; white-space:nowrap;
+}
+.badge-sports  { background:rgba(59,130,246,.18);  color:#60a5fa; }
+.badge-concert { background:rgba(139,92,246,.18);  color:#a78bfa; }
+.badge-kpop    { background:rgba(244,63,94,.18);   color:#fb7185; }
+.badge-anime   { background:rgba(16,185,129,.18);  color:#34d399; }
+
+/* ─── TABLE ─── */
+.tbl-wrap { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:24px; }
+.tbl-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); }
+.tbl-title { font-size:.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+.filter-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chip {
+  padding:4px 12px; border-radius:20px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); font-size:.78rem; font-weight:600;
+  cursor:pointer; transition:all .2s;
+}
+.chip:hover, .chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+table { width:100%; border-collapse:collapse; }
+thead th {
+  padding:10px 12px; font-size:.75rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.5px; color:var(--muted); border-bottom:1px solid var(--border);
+  text-align:left; cursor:pointer; user-select:none; white-space:nowrap;
+}
+thead th:hover { color:var(--text); }
+thead th.sort-asc::after  { content:' ▲'; color:var(--accent); }
+thead th.sort-desc::after { content:' ▼'; color:var(--accent); }
+tbody tr { border-bottom:1px solid rgba(255,255,255,.04); transition:background .15s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:rgba(255,255,255,.03); }
+tbody td { padding:10px 12px; font-size:.88rem; vertical-align:middle; }
+.rank-num { font-weight:800; color:var(--muted); font-size:.8rem; }
+.rank-num.gold   { color:#f59e0b; }
+.rank-num.silver { color:#94a3b8; }
+.rank-num.bronze { color:#cd7f32; }
+.act-name { font-weight:600; color:var(--text); font-size:.85rem; max-width:300px; }
+.act-id   { font-size:.72rem; color:var(--muted); margin-top:2px; }
+.pv-num   { font-weight:700; font-size:.92rem; }
+.pv-bar-wrap { display:flex; align-items:center; gap:8px; }
+.pv-bar { height:6px; border-radius:3px; min-width:2px; }
+.pv-pct { font-size:.75rem; color:var(--muted); width:38px; text-align:right; }
+
+/* ─── SEARCH BAR ─── */
+.search-bar {
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+  padding:12px 18px; border:1px solid var(--border); border-radius:12px;
+  background:var(--card); margin-bottom:20px;
+}
+#searchInput {
+  flex:1; min-width:200px;
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--text); border-radius:8px;
+  padding:7px 12px; font-size:.85rem; font-family:inherit; outline:none;
+  transition:border-color .2s;
+}
+#searchInput:focus { border-color:var(--accent); }
+#searchInput::placeholder { color:var(--muted); }
+.pv-chips { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+.pv-label { font-size:.75rem; color:var(--muted); white-space:nowrap; }
+.chip-pv { padding:4px 10px; border-radius:20px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); font-size:.76rem; font-weight:600;
+  cursor:pointer; transition:all .2s; }
+.chip-pv:hover, .chip-pv.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+.date-range { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.date-range input[type="text"] {
+  background:var(--surface); border:1px solid var(--border); color:var(--text);
+  border-radius:8px; padding:5px 10px; font-size:.8rem; font-family:inherit;
+  outline:none; cursor:pointer; transition:border-color .2s; min-width:160px;
+}
+.date-range input[type="text"]:focus { border-color:var(--cyan); }
+/* Flatpickr overrides */
+.flatpickr-day.selected,.flatpickr-day.startRange,.flatpickr-day.endRange {
+  background:#06b6d4 !important; border-color:#06b6d4 !important; }
+.flatpickr-day.inRange { background:rgba(6,182,212,.18) !important; box-shadow:none !important; }
+.flatpickr-day.today { border-color:#06b6d4; }
+.flatpickr-day.disabled,.flatpickr-day.disabled:hover { color:#334155 !important; background:transparent !important; }
+#resultCount { font-size:.78rem; color:var(--muted); margin-left:auto; white-space:nowrap; }
+
+/* ─── FOOTER ─── */
+footer { text-align:center; padding:20px; color:var(--muted); font-size:.8rem; border-top:1px solid var(--border); }
+footer a { color:var(--accent); text-decoration:none; }
+
+/* ─── MOBILE ─── */
+@media(max-width:640px){
+  .hdr { padding:20px 16px; }
+  .hdr h1 { font-size:1.3rem; }
+  .wrap { padding:16px 12px 40px; }
+  .chart-row { grid-template-columns:1fr; }
+  .kpi-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="hdr">
+  <div class="hdr-badge">D 系統 · GA PageView</div>
+  <h1>節目介紹頁瀏覽量分析</h1>
+  <div class="sub">
+    資料快照：<span>2026/06/10</span>　｜
+    來源：<span>ticket.ibon.com.tw/ActivityInfo/Details</span>　｜
+    資料更新：<span>2026/06/12</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ─── SEARCH / FILTER BAR ─── -->
+<div class="search-bar">
+  <div class="date-range">
+    <span class="pv-label">日期區間</span>
+    <input id="dateFrom" type="text" placeholder="起始日期" readonly>
+    <span class="pv-label">～</span>
+    <input id="dateTo" type="text" placeholder="結束日期" readonly>
+  </div>
+  <input id="searchInput" type="text" placeholder="🔍 搜尋活動名稱 / ActivityId…" oninput="applyFilters()">
+  <div class="pv-chips">
+    <span class="pv-label">PV ≥</span>
+    <button class="chip-pv active" data-min="0"     onclick="setPvMin(0,this)">全部</button>
+    <button class="chip-pv"       data-min="1000"   onclick="setPvMin(1000,this)">1,000+</button>
+    <button class="chip-pv"       data-min="5000"   onclick="setPvMin(5000,this)">5,000+</button>
+    <button class="chip-pv"       data-min="10000"  onclick="setPvMin(10000,this)">10,000+</button>
+    <button class="chip-pv"       data-min="50000"  onclick="setPvMin(50000,this)">50,000+</button>
+  </div>
+  <span id="resultCount"></span>
+</div>
+
+<!-- ─── INSIGHT BAR ─── -->
+<div class="insight-bar">
+  <div class="ins-item"><span class="ins-icon">🏆</span><span class="ins-label">瀏覽 No.1&nbsp;</span><span class="ins-val">7-ELEVEN 高雄啤酒音樂節（8,612）</span></div>
+  <div class="ins-item"><span class="ins-icon">⚾</span><span class="ins-label">棒球整合 PV&nbsp;</span><span class="ins-val">Rakuten 系列合計 6,648（若合算排 #2）</span></div>
+  <div class="ins-item"><span class="ins-icon">📊</span><span class="ins-label">前 5 名集中度&nbsp;</span><span class="ins-val">TOP 5 佔 69.3%</span></div>
+  <div class="ins-item"><span class="ins-icon">🎵</span><span class="ins-label">最大類別&nbsp;</span><span class="ins-val">演唱會 / 音樂節 48.1%</span></div>
+</div>
+
+<!-- ─── KPI CARDS ─── -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div id="kpi-total" class="kpi-val" style="color:var(--amber)">—</div>
+    <div class="kpi-label">總 Page Views</div>
+    <div id="kpi-total-sub" class="kpi-sub">全部日期</div>
+  </div>
+  <div class="kpi">
+    <div id="kpi-count" class="kpi-val" style="color:var(--cyan)">—</div>
+    <div class="kpi-label">活動數</div>
+    <div class="kpi-sub">含各票種子頁</div>
+  </div>
+  <div class="kpi">
+    <div id="kpi-max" class="kpi-val" style="color:var(--green)">—</div>
+    <div class="kpi-label">單頁最高 PV</div>
+    <div id="kpi-max-sub" class="kpi-sub">—</div>
+  </div>
+  <div class="kpi">
+    <div id="kpi-top5" class="kpi-val" style="color:var(--rose)">—</div>
+    <div class="kpi-label">TOP 5 集中度</div>
+    <div id="kpi-top5-sub" class="kpi-sub">—</div>
+  </div>
+  <div class="kpi">
+    <div id="kpi-sports" class="kpi-val" style="color:var(--sports)">—</div>
+    <div class="kpi-label">棒球 / TPBL</div>
+    <div id="kpi-sports-sub" class="kpi-sub">—</div>
+  </div>
+  <div class="kpi">
+    <div id="kpi-concert" class="kpi-val" style="color:var(--concert)">—</div>
+    <div class="kpi-label">演唱會 / 音樂節</div>
+    <div id="kpi-concert-sub" class="kpi-sub">—</div>
+  </div>
+</div>
+
+<!-- ─── CHARTS ROW ─── -->
+<div class="chart-row">
+  <!-- Donut -->
+  <div class="chart-card">
+    <div class="chart-title">📂 類別 PV 分布</div>
+    <div class="chart-wrap" style="height:220px;">
+      <canvas id="donutChart"></canvas>
+    </div>
+    <div class="cat-legend">
+      <div class="cat-item"><div class="cat-dot" style="background:var(--concert)"></div><span>演唱會/音樂節 48.1%</span></div>
+      <div class="cat-item"><div class="cat-dot" style="background:var(--sports)"></div><span>棒球/TPBL 39.7%</span></div>
+      <div class="cat-item"><div class="cat-dot" style="background:var(--kpop)"></div><span>K-pop/韓星 7.7%</span></div>
+      <div class="cat-item"><div class="cat-dot" style="background:var(--anime)"></div><span>動漫/遊戲 4.5%</span></div>
+    </div>
+  </div>
+
+  <!-- TOP 10 Horizontal Bar -->
+  <div class="chart-card">
+    <div class="chart-title">🏅 TOP 10 活動 PV</div>
+    <div class="chart-wrap" style="height:280px;">
+      <canvas id="top10Chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ─── DAILY TREND CHART ─── -->
+<div class="chart-card" style="margin-bottom:24px;">
+  <div class="chart-title">📅 每日 Page View 趨勢</div>
+  <div class="chart-wrap" style="height:200px;">
+    <canvas id="dailyChart"></canvas>
+  </div>
+  <div style="font-size:.78rem;color:var(--muted);margin-top:8px;text-align:right;">
+    最新資料更新：<span id="updateTimeLabel">2026/07/23 03:30</span>
+  </div>
+</div>
+
+<!-- ─── TABLE ─── -->
+<div class="tbl-wrap">
+  <div class="tbl-header">
+    <div class="tbl-title">📋 完整活動排行 <span id="tblCount" style="font-weight:400;opacity:.65;"></span></div>
+    <div class="filter-chips">
+      <button class="chip active" onclick="filterTable('all',this)">全部</button>
+      <button class="chip" onclick="filterTable('sports',this)">⚾ 體育</button>
+      <button class="chip" onclick="filterTable('concert',this)">🎵 演唱會</button>
+      <button class="chip" onclick="filterTable('kpop',this)">🎤 K-pop</button>
+      <button class="chip" onclick="filterTable('anime',this)">🎮 動漫</button>
+    </div>
+  </div>
+  <table id="mainTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">#</th>
+        <th>活動名稱</th>
+        <th>類別</th>
+        <th onclick="sortTable(3)" class="sort-desc">PV 數</th>
+        <th>佔比 &amp; 分佈</th>
+        <th onclick="sortTable(5)">ActivityId</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+</main>
+
+<footer>
+  資料來源：MongoDB <code>QwareAi / GA_D_PageViewData_Webb_202606</code>　｜
+  資料期間：2026/06/10 — 2026/06/20｜
+  <a href="HTML_Report_Catalog.html">← 返回目錄</a>
+</footer>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────
+const DAILY = [
+  {
+    "date": "06/10",
+    "totalPV": 33995,
+    "actCount": 32
+  },
+  {
+    "date": "06/11",
+    "totalPV": 49741,
+    "actCount": 32
+  },
+  {
+    "date": "06/12",
+    "totalPV": 39214,
+    "actCount": 31
+  },
+  {
+    "date": "06/13",
+    "totalPV": 33784,
+    "actCount": 31
+  },
+  {
+    "date": "06/14",
+    "totalPV": 37299,
+    "actCount": 28
+  },
+  {
+    "date": "06/15",
+    "totalPV": 34576,
+    "actCount": 30
+  },
+  {
+    "date": "06/16",
+    "totalPV": 38795,
+    "actCount": 33
+  },
+  {
+    "date": "06/17",
+    "totalPV": 100487,
+    "actCount": 34
+  },
+  {
+    "date": "06/18",
+    "totalPV": 43852,
+    "actCount": 31
+  },
+  {
+    "date": "06/19",
+    "totalPV": 41672,
+    "actCount": 30
+  },
+  {
+    "date": "06/20",
+    "totalPV": 66286,
+    "actCount": 29
+  },
+  {
+    "date": "06/21",
+    "totalPV": 27406,
+    "actCount": 28
+  },
+  {
+    "date": "06/22",
+    "totalPV": 55112,
+    "actCount": 31
+  },
+  {
+    "date": "06/23",
+    "totalPV": 156729,
+    "actCount": 33
+  },
+  {
+    "date": "06/24",
+    "totalPV": 480722,
+    "actCount": 36
+  },
+  {
+    "date": "06/25",
+    "totalPV": 187453,
+    "actCount": 34
+  },
+  {
+    "date": "06/26",
+    "totalPV": 141540,
+    "actCount": 35
+  },
+  {
+    "date": "06/27",
+    "totalPV": 274634,
+    "actCount": 35
+  },
+  {
+    "date": "06/28",
+    "totalPV": 58827,
+    "actCount": 28
+  },
+  {
+    "date": "06/29",
+    "totalPV": 120186,
+    "actCount": 29
+  },
+  {
+    "date": "06/30",
+    "totalPV": 89612,
+    "actCount": 30
+  },
+  {
+    "date": "07/01",
+    "totalPV": 37634,
+    "actCount": 28
+  },
+  {
+    "date": "07/02",
+    "totalPV": 37043,
+    "actCount": 29
+  },
+  {
+    "date": "07/03",
+    "totalPV": 37765,
+    "actCount": 30
+  },
+  {
+    "date": "07/04",
+    "totalPV": 29332,
+    "actCount": 30
+  },
+  {
+    "date": "07/05",
+    "totalPV": 28763,
+    "actCount": 26
+  },
+  {
+    "date": "07/06",
+    "totalPV": 33136,
+    "actCount": 28
+  },
+  {
+    "date": "07/07",
+    "totalPV": 45026,
+    "actCount": 28
+  },
+  {
+    "date": "07/08",
+    "totalPV": 36145,
+    "actCount": 32
+  },
+  {
+    "date": "07/09",
+    "totalPV": 40832,
+    "actCount": 31
+  },
+  {
+    "date": "07/10",
+    "totalPV": 66520,
+    "actCount": 36
+  },
+  {
+    "date": "07/11",
+    "totalPV": 56248,
+    "actCount": 34
+  },
+  {
+    "date": "07/12",
+    "totalPV": 87709,
+    "actCount": 34
+  },
+  {
+    "date": "07/13",
+    "totalPV": 48358,
+    "actCount": 34
+  },
+  {
+    "date": "07/14",
+    "totalPV": 51520,
+    "actCount": 34
+  },
+  {
+    "date": "07/15",
+    "totalPV": 136256,
+    "actCount": 34
+  },
+  {
+    "date": "07/16",
+    "totalPV": 210063,
+    "actCount": 35
+  },
+  {
+    "date": "07/17",
+    "totalPV": 107038,
+    "actCount": 37
+  },
+  {
+    "date": "07/18",
+    "totalPV": 90578,
+    "actCount": 37
+  },
+  {
+    "date": "07/19",
+    "totalPV": 61963,
+    "actCount": 34
+  },
+  {
+    "date": "07/20",
+    "totalPV": 70632,
+    "actCount": 32
+  },
+  {
+    "date": "07/21",
+    "totalPV": 43670,
+    "actCount": 34
+  }
+];
+const DATA = [
+  {
+    "rank": 1,
+    "id": "39701",
+    "name": "2026年台灣精品中華職棒明星對抗賽",
+    "cat": "concert",
+    "pv": 656541,
+    "pvByDate": {
+      "06/22": 2921,
+      "06/23": 27682,
+      "06/24": 371490,
+      "06/25": 18613,
+      "06/26": 9112,
+      "06/27": 7355,
+      "06/28": 5854,
+      "06/29": 5460,
+      "06/30": 5063,
+      "07/01": 6552,
+      "07/02": 6288,
+      "07/03": 6155,
+      "07/04": 4168,
+      "07/05": 6234,
+      "07/06": 10038,
+      "07/07": 16464,
+      "07/08": 11605,
+      "07/09": 11001,
+      "07/10": 8954,
+      "07/11": 7526,
+      "07/12": 7786,
+      "07/13": 10808,
+      "07/14": 14335,
+      "07/15": 15404,
+      "07/16": 14796,
+      "07/17": 15497,
+      "07/18": 19105,
+      "07/19": 8858,
+      "07/20": 954,
+      "07/21": 463
+    }
+  },
+  {
+    "rank": 2,
+    "id": "39689",
+    "name": "中華職棒37年Rakuten主場例行賽 臺北大巨蛋場次",
+    "cat": "concert",
+    "pv": 372320,
+    "pvByDate": {
+      "06/17": 632,
+      "06/18": 905,
+      "06/19": 949,
+      "06/20": 1048,
+      "06/21": 1218,
+      "06/22": 6749,
+      "06/23": 16650,
+      "06/24": 20167,
+      "06/25": 48379,
+      "06/26": 62562,
+      "06/27": 69913,
+      "06/28": 17431,
+      "06/29": 11706,
+      "06/30": 4796,
+      "07/01": 3770,
+      "07/02": 3393,
+      "07/03": 2717,
+      "07/04": 2708,
+      "07/05": 2644,
+      "07/06": 3650,
+      "07/07": 4853,
+      "07/08": 2720,
+      "07/09": 3210,
+      "07/10": 2677,
+      "07/11": 4886,
+      "07/12": 2894,
+      "07/13": 8561,
+      "07/14": 9212,
+      "07/15": 7602,
+      "07/16": 13944,
+      "07/17": 6859,
+      "07/18": 4323,
+      "07/19": 5947,
+      "07/20": 6420,
+      "07/21": 6225
+    }
+  },
+  {
+    "rank": 3,
+    "id": "39428",
+    "name": "中華職棒37年Rakuten主場例行賽",
+    "cat": "sports",
+    "pv": 276670,
+    "pvByDate": {
+      "06/10": 4005,
+      "06/11": 4230,
+      "06/12": 3429,
+      "06/13": 3541,
+      "06/14": 3816,
+      "06/15": 7054,
+      "06/16": 7214,
+      "06/17": 7149,
+      "06/18": 14384,
+      "06/19": 12639,
+      "06/20": 9304,
+      "06/21": 6023,
+      "06/22": 7479,
+      "06/23": 11962,
+      "06/24": 12616,
+      "06/25": 14199,
+      "06/26": 17378,
+      "06/27": 13529,
+      "06/28": 7534,
+      "06/29": 5681,
+      "06/30": 3604,
+      "07/01": 2927,
+      "07/02": 2973,
+      "07/03": 2809,
+      "07/04": 2763,
+      "07/05": 2932,
+      "07/06": 2873,
+      "07/07": 3243,
+      "07/08": 2603,
+      "07/09": 3233,
+      "07/10": 3026,
+      "07/11": 4395,
+      "07/12": 5424,
+      "07/13": 5825,
+      "07/14": 5980,
+      "07/15": 6592,
+      "07/16": 7836,
+      "07/17": 17331,
+      "07/18": 5057,
+      "07/19": 3938,
+      "07/20": 4121,
+      "07/21": 4019
+    }
+  },
+  {
+    "rank": 4,
+    "id": "39697",
+    "name": "中華職棒37年例行賽統一獅主場（下）",
+    "cat": "concert",
+    "pv": 247638,
+    "pvByDate": {
+      "06/22": 3282,
+      "06/23": 68812,
+      "06/24": 24441,
+      "06/25": 24461,
+      "06/26": 8008,
+      "06/27": 5988,
+      "06/28": 5229,
+      "06/29": 5017,
+      "06/30": 5086,
+      "07/01": 4273,
+      "07/02": 4236,
+      "07/03": 3347,
+      "07/04": 3597,
+      "07/05": 3865,
+      "07/06": 5250,
+      "07/07": 5939,
+      "07/08": 4715,
+      "07/09": 4255,
+      "07/10": 4908,
+      "07/11": 5126,
+      "07/12": 4766,
+      "07/13": 5552,
+      "07/14": 4784,
+      "07/15": 6134,
+      "07/16": 4503,
+      "07/17": 5690,
+      "07/18": 3437,
+      "07/19": 4626,
+      "07/20": 4075,
+      "07/21": 4236
+    }
+  },
+  {
+    "rank": 5,
+    "id": "39703",
+    "name": "2026 FTISLAND TOUR 0 — XIX — III ‘FaTe’ in KAOHSIUNG",
+    "cat": "concert",
+    "pv": 193716,
+    "pvByDate": {
+      "06/23": 2424,
+      "06/24": 3882,
+      "06/25": 2469,
+      "06/26": 7550,
+      "06/27": 149960,
+      "06/28": 4742,
+      "06/29": 4629,
+      "06/30": 3469,
+      "07/01": 2050,
+      "07/02": 1382,
+      "07/03": 988,
+      "07/04": 609,
+      "07/05": 587,
+      "07/06": 678,
+      "07/07": 900,
+      "07/08": 618,
+      "07/09": 499,
+      "07/10": 599,
+      "07/11": 540,
+      "07/12": 636,
+      "07/13": 436,
+      "07/14": 399,
+      "07/15": 688,
+      "07/16": 638,
+      "07/17": 567,
+      "07/18": 462,
+      "07/19": 400,
+      "07/20": 522,
+      "07/21": 393
+    }
+  },
+  {
+    "rank": 6,
+    "id": "39762",
+    "name": "TOY STORY｜PEACEMINUSONE：THE FIRST FAN 臺北站",
+    "cat": "concert",
+    "pv": 184538,
+    "pvByDate": {
+      "07/15": 22284,
+      "07/16": 136729,
+      "07/17": 7605,
+      "07/18": 10736,
+      "07/19": 2591,
+      "07/20": 2275,
+      "07/21": 2318
+    }
+  },
+  {
+    "rank": 7,
+    "id": "39696",
+    "name": "UNDERTALE：The Determination Symphony",
+    "cat": "concert",
+    "pv": 161955,
+    "pvByDate": {
+      "06/19": 1877,
+      "06/20": 4754,
+      "06/21": 2667,
+      "06/22": 2484,
+      "06/23": 2522,
+      "06/24": 5530,
+      "06/25": 54966,
+      "06/26": 6005,
+      "06/27": 2098,
+      "06/28": 2441,
+      "06/29": 69380,
+      "06/30": 1515,
+      "07/01": 798,
+      "07/02": 594,
+      "07/03": 491,
+      "07/04": 365,
+      "07/05": 293,
+      "07/06": 331,
+      "07/07": 321,
+      "07/08": 272,
+      "07/09": 287,
+      "07/10": 207,
+      "07/11": 148,
+      "07/12": 206,
+      "07/13": 195,
+      "07/14": 146,
+      "07/15": 174,
+      "07/16": 134,
+      "07/17": 138,
+      "07/18": 190,
+      "07/19": 152,
+      "07/20": 131,
+      "07/21": 143
+    }
+  },
+  {
+    "rank": 8,
+    "id": "39760",
+    "name": "J－LIONS主題日「非‧日常」",
+    "cat": "concert",
+    "pv": 146102,
+    "pvByDate": {
+      "07/14": 1695,
+      "07/15": 48866,
+      "07/16": 14858,
+      "07/17": 34297,
+      "07/18": 18037,
+      "07/19": 17330,
+      "07/20": 6733,
+      "07/21": 4286
+    }
+  },
+  {
+    "rank": 9,
+    "id": "39590",
+    "name": "2026 7–ELEVEN 高雄啤酒音樂節",
+    "cat": "concert",
+    "pv": 126336,
+    "pvByDate": {
+      "06/10": 8612,
+      "06/11": 5406,
+      "06/12": 5841,
+      "06/13": 4431,
+      "06/14": 4811,
+      "06/15": 7035,
+      "06/16": 8308,
+      "06/17": 3589,
+      "06/18": 2882,
+      "06/19": 2718,
+      "06/20": 2058,
+      "06/21": 2038,
+      "06/22": 2903,
+      "06/23": 2829,
+      "06/24": 3327,
+      "06/25": 3349,
+      "06/26": 4764,
+      "06/27": 3573,
+      "06/28": 3646,
+      "06/29": 3129,
+      "06/30": 4667,
+      "07/01": 5446,
+      "07/02": 8764,
+      "07/03": 11940,
+      "07/04": 6426,
+      "07/05": 3844
+    }
+  },
+  {
+    "rank": 10,
+    "id": "39226",
+    "name": "2025－2026  桃園璞園領航猿主場",
+    "cat": "sports",
+    "pv": 99628,
+    "pvByDate": {
+      "06/10": 4204,
+      "06/11": 3691,
+      "06/12": 4158,
+      "06/13": 4260,
+      "06/14": 3101,
+      "06/16": 3720,
+      "06/17": 70125,
+      "06/18": 6369
+    }
+  },
+  {
+    "rank": 11,
+    "id": "39664",
+    "name": "2026 TRENDY TAIPEI 潮臺北—JAM JAM ASIA 亞洲音樂節",
+    "cat": "concert",
+    "pv": 93912,
+    "pvByDate": {
+      "06/10": 4240,
+      "06/11": 1967,
+      "06/12": 2075,
+      "06/13": 1481,
+      "06/14": 2525,
+      "06/15": 2375,
+      "06/16": 1838,
+      "06/17": 1801,
+      "06/18": 969,
+      "06/19": 1447,
+      "06/20": 1613,
+      "06/21": 960,
+      "06/22": 985,
+      "06/23": 1032,
+      "06/24": 1259,
+      "06/25": 618,
+      "06/26": 405,
+      "06/27": 1000,
+      "06/28": 1284,
+      "06/29": 1747,
+      "06/30": 1935,
+      "07/01": 1756,
+      "07/02": 1639,
+      "07/03": 1403,
+      "07/04": 1770,
+      "07/05": 1699,
+      "07/06": 1756,
+      "07/07": 4592,
+      "07/08": 4028,
+      "07/09": 4529,
+      "07/10": 4302,
+      "07/11": 3651,
+      "07/12": 3539,
+      "07/13": 3291,
+      "07/14": 2083,
+      "07/15": 6961,
+      "07/16": 2640,
+      "07/17": 2481,
+      "07/18": 2464,
+      "07/19": 2398,
+      "07/20": 2083,
+      "07/21": 1291
+    }
+  },
+  {
+    "rank": 12,
+    "id": "39455",
+    "name": "中華職棒37年例行賽統一獅主場（上）",
+    "cat": "sports",
+    "pv": 84634,
+    "pvByDate": {
+      "06/10": 2491,
+      "06/11": 3965,
+      "06/12": 2551,
+      "06/13": 2983,
+      "06/14": 3089,
+      "06/15": 3829,
+      "06/16": 5468,
+      "06/17": 5200,
+      "06/18": 6691,
+      "06/19": 7375,
+      "06/20": 6227,
+      "06/21": 4303,
+      "06/22": 5387,
+      "06/23": 7620,
+      "06/24": 4187,
+      "06/25": 2699,
+      "06/26": 1590,
+      "06/27": 1312,
+      "06/28": 1881,
+      "06/29": 1420,
+      "06/30": 2239,
+      "07/01": 2127
+    }
+  },
+  {
+    "rank": 13,
+    "id": "39611",
+    "name": "2026 角頭GATAO唱演會—情義到高雄",
+    "cat": "concert",
+    "pv": 76576,
+    "pvByDate": {
+      "06/10": 1985,
+      "06/11": 20299,
+      "06/12": 7527,
+      "06/13": 8566,
+      "06/14": 11770,
+      "06/15": 1862,
+      "06/16": 967,
+      "06/17": 1013,
+      "06/18": 731,
+      "06/19": 636,
+      "06/20": 1304,
+      "06/21": 778,
+      "06/22": 576,
+      "06/23": 479,
+      "06/24": 586,
+      "06/25": 411,
+      "06/26": 282,
+      "06/27": 326,
+      "06/28": 259,
+      "06/29": 2531,
+      "06/30": 1941,
+      "07/01": 736,
+      "07/02": 918,
+      "07/03": 1101,
+      "07/04": 766,
+      "07/05": 511,
+      "07/06": 1178,
+      "07/07": 1343,
+      "07/08": 493,
+      "07/09": 519,
+      "07/10": 403,
+      "07/11": 365,
+      "07/12": 325,
+      "07/13": 380,
+      "07/14": 464,
+      "07/15": 397,
+      "07/16": 290,
+      "07/17": 298,
+      "07/18": 313,
+      "07/19": 309,
+      "07/20": 303,
+      "07/21": 335
+    }
+  },
+  {
+    "rank": 14,
+    "id": "39494",
+    "name": "2026星光女孩日",
+    "cat": "concert",
+    "pv": 67821,
+    "pvByDate": {
+      "06/10": 194,
+      "06/11": 379,
+      "06/12": 227,
+      "06/13": 183,
+      "06/14": 192,
+      "06/15": 276,
+      "06/16": 350,
+      "06/17": 306,
+      "06/18": 286,
+      "06/19": 287,
+      "06/26": 1129,
+      "06/27": 1016,
+      "06/28": 823,
+      "06/29": 2437,
+      "06/30": 43077,
+      "07/01": 1820,
+      "07/02": 1193,
+      "07/03": 883,
+      "07/04": 599,
+      "07/05": 743,
+      "07/06": 912,
+      "07/07": 1034,
+      "07/08": 731,
+      "07/09": 784,
+      "07/10": 693,
+      "07/11": 573,
+      "07/12": 549,
+      "07/13": 816,
+      "07/14": 730,
+      "07/15": 961,
+      "07/16": 757,
+      "07/17": 854,
+      "07/18": 479,
+      "07/19": 509,
+      "07/20": 501,
+      "07/21": 538
+    }
+  },
+  {
+    "rank": 15,
+    "id": "39736",
+    "name": "Enemies With Benefits 1st Fan meeting in Taipei",
+    "cat": "concert",
+    "pv": 64555,
+    "pvByDate": {
+      "07/09": 1403,
+      "07/10": 1935,
+      "07/11": 3499,
+      "07/12": 50812,
+      "07/13": 1668,
+      "07/14": 832,
+      "07/15": 1067,
+      "07/16": 1876,
+      "07/17": 656,
+      "07/18": 258,
+      "07/19": 195,
+      "07/20": 184,
+      "07/21": 170
+    }
+  },
+  {
+    "rank": 16,
+    "id": "39451",
+    "name": "中華職棒37年Rakuten主場例行賽 特色席位＆套票",
+    "cat": "sports",
+    "pv": 41960,
+    "pvByDate": {
+      "06/10": 473,
+      "06/11": 584,
+      "06/12": 385,
+      "06/13": 432,
+      "06/14": 459,
+      "06/15": 698,
+      "06/16": 847,
+      "06/17": 723,
+      "06/18": 1071,
+      "06/19": 1096,
+      "06/20": 962,
+      "06/21": 621,
+      "06/22": 1098,
+      "06/23": 1981,
+      "06/24": 2468,
+      "06/25": 2812,
+      "06/26": 3589,
+      "06/27": 3405,
+      "06/28": 1698,
+      "06/29": 1342,
+      "06/30": 698,
+      "07/01": 555,
+      "07/02": 533,
+      "07/03": 427,
+      "07/04": 378,
+      "07/05": 486,
+      "07/06": 434,
+      "07/07": 592,
+      "07/08": 404,
+      "07/09": 420,
+      "07/10": 428,
+      "07/11": 601,
+      "07/12": 603,
+      "07/13": 1070,
+      "07/14": 1079,
+      "07/15": 1034,
+      "07/16": 1422,
+      "07/17": 1136,
+      "07/18": 655,
+      "07/19": 814,
+      "07/20": 732,
+      "07/21": 715
+    }
+  },
+  {
+    "rank": 17,
+    "id": "39680",
+    "name": "LMSY Love in Our Sweet Yard Fan Meeting in Kaohsiung",
+    "cat": "kpop",
+    "pv": 40356,
+    "pvByDate": {
+      "06/10": 213,
+      "06/11": 238,
+      "06/12": 170,
+      "06/13": 144,
+      "06/14": 241,
+      "06/15": 229,
+      "06/16": 225,
+      "06/17": 332,
+      "06/18": 570,
+      "06/19": 1451,
+      "06/20": 27152,
+      "06/21": 1154,
+      "06/22": 814,
+      "06/23": 627,
+      "06/24": 598,
+      "06/25": 252,
+      "06/26": 287,
+      "06/27": 427,
+      "06/28": 185,
+      "06/29": 298,
+      "06/30": 237,
+      "07/01": 168,
+      "07/02": 172,
+      "07/03": 163,
+      "07/04": 109,
+      "07/06": 358,
+      "07/07": 263,
+      "07/08": 258,
+      "07/09": 166,
+      "07/10": 301,
+      "07/11": 244,
+      "07/12": 565,
+      "07/13": 216,
+      "07/14": 168,
+      "07/15": 171,
+      "07/16": 238,
+      "07/17": 223,
+      "07/18": 166,
+      "07/19": 125,
+      "07/20": 219,
+      "07/21": 219
+    }
+  },
+  {
+    "rank": 18,
+    "id": "39584",
+    "name": "ACON 2026 IN TAIPEI",
+    "cat": "anime",
+    "pv": 39437,
+    "pvByDate": {
+      "06/10": 408,
+      "06/11": 400,
+      "06/12": 712,
+      "06/13": 565,
+      "06/14": 744,
+      "06/15": 567,
+      "06/16": 616,
+      "06/17": 469,
+      "06/18": 450,
+      "06/19": 1183,
+      "06/20": 634,
+      "06/21": 713,
+      "06/22": 695,
+      "06/23": 685,
+      "06/24": 590,
+      "06/25": 797,
+      "06/26": 785,
+      "06/27": 810,
+      "06/28": 572,
+      "06/29": 628,
+      "06/30": 984,
+      "07/01": 836,
+      "07/02": 956,
+      "07/03": 802,
+      "07/04": 636,
+      "07/05": 684,
+      "07/06": 786,
+      "07/07": 902,
+      "07/08": 917,
+      "07/09": 1129,
+      "07/10": 761,
+      "07/11": 793,
+      "07/12": 945,
+      "07/13": 1062,
+      "07/14": 2584,
+      "07/15": 1194,
+      "07/16": 1423,
+      "07/17": 1433,
+      "07/18": 1045,
+      "07/19": 1195,
+      "07/20": 3359,
+      "07/21": 1988
+    }
+  },
+  {
+    "rank": 19,
+    "id": "39750",
+    "name": "U－KNOW PROJECT 26：SCENE＃1 in Taipei",
+    "cat": "concert",
+    "pv": 33521,
+    "pvByDate": {
+      "07/10": 1162,
+      "07/11": 700,
+      "07/12": 688,
+      "07/13": 446,
+      "07/14": 428,
+      "07/15": 523,
+      "07/16": 474,
+      "07/17": 1382,
+      "07/18": 12417,
+      "07/19": 1300,
+      "07/20": 10713,
+      "07/21": 3288
+    }
+  },
+  {
+    "rank": 20,
+    "id": "39744",
+    "name": "《偶像相遇祭》VIP福利",
+    "cat": "concert",
+    "pv": 33018,
+    "pvByDate": {
+      "07/03": 684,
+      "07/04": 350,
+      "07/05": 140,
+      "07/06": 235,
+      "07/07": 164,
+      "07/08": 178,
+      "07/09": 827,
+      "07/10": 13225,
+      "07/11": 13045,
+      "07/12": 830,
+      "07/13": 439,
+      "07/14": 401,
+      "07/15": 317,
+      "07/16": 339,
+      "07/17": 439,
+      "07/18": 521,
+      "07/19": 338,
+      "07/20": 268,
+      "07/21": 278
+    }
+  },
+  {
+    "rank": 21,
+    "id": "39707",
+    "name": "江美琪《傷心唱出來就沒事了》演唱會 2‧0 台北站",
+    "cat": "concert",
+    "pv": 30068,
+    "pvByDate": {
+      "07/08": 1929,
+      "07/09": 4281,
+      "07/10": 11404,
+      "07/11": 936,
+      "07/12": 926,
+      "07/13": 495,
+      "07/14": 462,
+      "07/15": 321,
+      "07/16": 329,
+      "07/17": 271,
+      "07/18": 1785,
+      "07/19": 1406,
+      "07/20": 2922,
+      "07/21": 2601
+    }
+  },
+  {
+    "rank": 22,
+    "id": "39667",
+    "name": "中華職棒37年Rakuten主場例行賽 辣酷甜女孩套票",
+    "cat": "sports",
+    "pv": 30057,
+    "pvByDate": {
+      "06/10": 1530,
+      "06/11": 2291,
+      "06/12": 880,
+      "06/13": 635,
+      "06/14": 558,
+      "06/15": 663,
+      "06/16": 692,
+      "06/17": 534,
+      "06/18": 532,
+      "06/19": 438,
+      "06/20": 593,
+      "06/21": 457,
+      "06/22": 1058,
+      "06/23": 1386,
+      "06/24": 1559,
+      "06/25": 1826,
+      "06/26": 1546,
+      "06/27": 1469,
+      "06/28": 587,
+      "06/29": 486,
+      "06/30": 399,
+      "07/01": 361,
+      "07/02": 347,
+      "07/03": 319,
+      "07/04": 296,
+      "07/05": 321,
+      "07/06": 354,
+      "07/07": 453,
+      "07/08": 295,
+      "07/09": 362,
+      "07/10": 360,
+      "07/11": 419,
+      "07/12": 385,
+      "07/13": 663,
+      "07/14": 643,
+      "07/15": 689,
+      "07/16": 897,
+      "07/17": 647,
+      "07/18": 396,
+      "07/19": 586,
+      "07/20": 575,
+      "07/21": 570
+    }
+  },
+  {
+    "rank": 23,
+    "id": "39754",
+    "name": "鏞不止步-陳鏞基引退系列",
+    "cat": "concert",
+    "pv": 27053,
+    "pvByDate": {
+      "07/14": 1045,
+      "07/15": 11451,
+      "07/16": 2266,
+      "07/17": 4883,
+      "07/18": 1573,
+      "07/19": 2632,
+      "07/20": 2056,
+      "07/21": 1147
+    }
+  },
+  {
+    "rank": 24,
+    "id": "39511",
+    "name": "中華職棒37年Rakuten主場例行賽 黑松沙士快樂炒",
+    "cat": "sports",
+    "pv": 24423,
+    "pvByDate": {
+      "06/10": 275,
+      "06/11": 313,
+      "06/12": 245,
+      "06/13": 259,
+      "06/14": 233,
+      "06/15": 414,
+      "06/16": 492,
+      "06/17": 375,
+      "06/18": 411,
+      "06/19": 454,
+      "06/20": 492,
+      "06/21": 399,
+      "06/22": 728,
+      "06/23": 1095,
+      "06/24": 1358,
+      "06/25": 1380,
+      "06/26": 1636,
+      "06/27": 1833,
+      "06/28": 1071,
+      "06/29": 743,
+      "06/30": 400,
+      "07/01": 310,
+      "07/02": 293,
+      "07/03": 235,
+      "07/04": 273,
+      "07/05": 311,
+      "07/06": 270,
+      "07/07": 346,
+      "07/08": 267,
+      "07/09": 249,
+      "07/10": 273,
+      "07/11": 346,
+      "07/12": 418,
+      "07/13": 697,
+      "07/14": 663,
+      "07/15": 522,
+      "07/16": 1009,
+      "07/17": 737,
+      "07/18": 457,
+      "07/19": 1134,
+      "07/20": 501,
+      "07/21": 506
+    }
+  },
+  {
+    "rank": 25,
+    "id": "39687",
+    "name": "2026台北羽球公開賽",
+    "cat": "concert",
+    "pv": 23144,
+    "pvByDate": {
+      "06/13": 124,
+      "06/15": 134,
+      "06/16": 208,
+      "06/17": 105,
+      "06/20": 102,
+      "06/21": 121,
+      "06/22": 623,
+      "06/23": 835,
+      "06/24": 839,
+      "06/25": 2517,
+      "06/26": 6905,
+      "06/27": 990,
+      "06/28": 621,
+      "06/29": 481,
+      "06/30": 478,
+      "07/01": 381,
+      "07/02": 337,
+      "07/03": 338,
+      "07/04": 323,
+      "07/05": 264,
+      "07/06": 362,
+      "07/07": 309,
+      "07/08": 285,
+      "07/09": 331,
+      "07/10": 275,
+      "07/11": 328,
+      "07/12": 416,
+      "07/13": 480,
+      "07/14": 444,
+      "07/15": 433,
+      "07/16": 461,
+      "07/17": 429,
+      "07/18": 510,
+      "07/19": 414,
+      "07/20": 389,
+      "07/21": 552
+    }
+  },
+  {
+    "rank": 26,
+    "id": "39690",
+    "name": "閻奕格【逃生出口 Way Out巡迴演唱會— 台北站 】",
+    "cat": "concert",
+    "pv": 21914,
+    "pvByDate": {
+      "06/15": 1699,
+      "06/16": 913,
+      "06/17": 726,
+      "06/18": 372,
+      "06/19": 216,
+      "06/20": 350,
+      "06/21": 221,
+      "06/22": 520,
+      "06/23": 1451,
+      "06/24": 9452,
+      "06/25": 781,
+      "06/26": 576,
+      "06/27": 740,
+      "06/28": 274,
+      "06/29": 253,
+      "06/30": 233,
+      "07/01": 425,
+      "07/02": 154,
+      "07/03": 161,
+      "07/04": 114,
+      "07/05": 142,
+      "07/06": 195,
+      "07/07": 271,
+      "07/08": 242,
+      "07/09": 327,
+      "07/10": 186,
+      "07/11": 139,
+      "07/14": 101,
+      "07/15": 113,
+      "07/18": 146,
+      "07/19": 101,
+      "07/21": 320
+    }
+  },
+  {
+    "rank": 27,
+    "id": "39607",
+    "name": "2026 T CONCERT《IDOL MEET FEST 偶像相遇祭》",
+    "cat": "kpop",
+    "pv": 21281,
+    "pvByDate": {
+      "06/10": 110,
+      "06/11": 165,
+      "06/12": 247,
+      "06/13": 408,
+      "06/14": 352,
+      "06/15": 1454,
+      "06/16": 548,
+      "06/17": 596,
+      "06/18": 520,
+      "06/19": 579,
+      "06/20": 587,
+      "06/21": 693,
+      "06/22": 686,
+      "06/23": 556,
+      "06/24": 705,
+      "06/25": 723,
+      "06/26": 637,
+      "06/27": 589,
+      "06/28": 556,
+      "06/29": 567,
+      "06/30": 408,
+      "07/01": 283,
+      "07/02": 534,
+      "07/03": 959,
+      "07/04": 538,
+      "07/05": 327,
+      "07/06": 528,
+      "07/07": 331,
+      "07/08": 352,
+      "07/09": 489,
+      "07/10": 1197,
+      "07/11": 876,
+      "07/12": 284,
+      "07/13": 409,
+      "07/14": 265,
+      "07/15": 220,
+      "07/16": 259,
+      "07/17": 219,
+      "07/18": 212,
+      "07/19": 323,
+      "07/20": 380,
+      "07/21": 610
+    }
+  },
+  {
+    "rank": 28,
+    "id": "39603",
+    "name": "2026 FTISLAND TOUR 0 — XIX — III ‘FaTe’ in TAIPEI",
+    "cat": "kpop",
+    "pv": 20398,
+    "pvByDate": {
+      "06/10": 386,
+      "06/11": 542,
+      "06/12": 1042,
+      "06/13": 558,
+      "06/14": 591,
+      "06/15": 641,
+      "06/16": 620,
+      "06/17": 612,
+      "06/18": 688,
+      "06/19": 2029,
+      "06/20": 3531,
+      "06/21": 1804,
+      "06/22": 956,
+      "06/23": 488,
+      "06/24": 291,
+      "06/25": 165,
+      "06/26": 271,
+      "06/27": 3718,
+      "06/28": 232,
+      "06/29": 209,
+      "06/30": 268,
+      "07/01": 233,
+      "07/02": 156,
+      "07/03": 106,
+      "07/04": 105,
+      "07/07": 156
+    }
+  },
+  {
+    "rank": 29,
+    "id": "39665",
+    "name": "Zenless Live 2026 – Signal Lost DJ Live – 台北站",
+    "cat": "concert",
+    "pv": 20186,
+    "pvByDate": {
+      "06/17": 331,
+      "06/18": 391,
+      "06/19": 311,
+      "06/20": 568,
+      "06/21": 363,
+      "06/22": 9639,
+      "06/23": 1398,
+      "06/24": 671,
+      "06/25": 390,
+      "06/26": 798,
+      "06/27": 270,
+      "06/28": 249,
+      "06/29": 260,
+      "06/30": 141,
+      "07/01": 256,
+      "07/02": 660,
+      "07/03": 359,
+      "07/04": 1062,
+      "07/05": 510,
+      "07/06": 302,
+      "07/07": 246,
+      "07/08": 193,
+      "07/17": 211,
+      "07/18": 215,
+      "07/19": 107,
+      "07/20": 164,
+      "07/21": 121
+    }
+  },
+  {
+    "rank": 30,
+    "id": "39761",
+    "name": "2026 XLOV ASIA TOUR ＜Serving—X＞ IN TAIPEI",
+    "cat": "concert",
+    "pv": 19876,
+    "pvByDate": {
+      "07/17": 286,
+      "07/18": 382,
+      "07/19": 772,
+      "07/20": 15841,
+      "07/21": 2595
+    }
+  },
+  {
+    "rank": 31,
+    "id": "39529",
+    "name": "《LA LA LAND IN CONCERT》樂來越愛你 電影交響音樂會",
+    "cat": "concert",
+    "pv": 16737,
+    "pvByDate": {
+      "06/11": 121,
+      "06/12": 144,
+      "06/13": 446,
+      "06/14": 337,
+      "06/15": 262,
+      "06/16": 260,
+      "06/17": 238,
+      "06/18": 172,
+      "06/19": 169,
+      "06/20": 188,
+      "06/21": 190,
+      "06/22": 145,
+      "06/23": 133,
+      "06/24": 142,
+      "06/25": 133,
+      "06/26": 148,
+      "06/27": 138,
+      "06/28": 120,
+      "06/29": 153,
+      "06/30": 171,
+      "07/01": 122,
+      "07/02": 138,
+      "07/03": 128,
+      "07/04": 122,
+      "07/05": 131,
+      "07/06": 142,
+      "07/07": 110,
+      "07/08": 136,
+      "07/09": 137,
+      "07/10": 159,
+      "07/11": 171,
+      "07/12": 215,
+      "07/13": 148,
+      "07/14": 125,
+      "07/15": 185,
+      "07/16": 167,
+      "07/17": 217,
+      "07/18": 3574,
+      "07/19": 2298,
+      "07/20": 2232,
+      "07/21": 2270
+    }
+  },
+  {
+    "rank": 32,
+    "id": "39559",
+    "name": "2026 蔡琴 不要告別 巡迴演唱會〔台北返場〕",
+    "cat": "concert",
+    "pv": 15741,
+    "pvByDate": {
+      "06/10": 543,
+      "06/11": 916,
+      "06/12": 1002,
+      "06/13": 1117,
+      "06/14": 1408,
+      "06/15": 1418,
+      "06/16": 867,
+      "06/17": 921,
+      "06/18": 261,
+      "06/19": 235,
+      "06/20": 242,
+      "06/21": 198,
+      "06/22": 241,
+      "06/23": 230,
+      "06/24": 209,
+      "06/25": 264,
+      "06/26": 256,
+      "06/27": 294,
+      "06/28": 266,
+      "06/29": 245,
+      "06/30": 235,
+      "07/01": 294,
+      "07/02": 215,
+      "07/03": 155,
+      "07/04": 190,
+      "07/05": 215,
+      "07/06": 218,
+      "07/07": 172,
+      "07/08": 181,
+      "07/09": 165,
+      "07/10": 199,
+      "07/11": 242,
+      "07/12": 211,
+      "07/13": 218,
+      "07/14": 235,
+      "07/15": 260,
+      "07/16": 175,
+      "07/17": 213,
+      "07/18": 198,
+      "07/19": 247,
+      "07/20": 206,
+      "07/21": 164
+    }
+  },
+  {
+    "rank": 33,
+    "id": "39496",
+    "name": "THE MUSIC OF SQUARE ENIX－Magic，Memories，and Melodies",
+    "cat": "anime",
+    "pv": 14591,
+    "pvByDate": {
+      "06/10": 724,
+      "06/11": 773,
+      "06/12": 981,
+      "06/13": 793,
+      "06/14": 849,
+      "06/15": 958,
+      "06/16": 160,
+      "06/22": 143,
+      "06/23": 124,
+      "06/24": 140,
+      "06/25": 130,
+      "06/26": 198,
+      "06/27": 169,
+      "06/28": 193,
+      "06/29": 214,
+      "06/30": 166,
+      "07/01": 124,
+      "07/02": 159,
+      "07/03": 161,
+      "07/04": 123,
+      "07/05": 1190,
+      "07/06": 1084,
+      "07/07": 1076,
+      "07/08": 776,
+      "07/09": 456,
+      "07/10": 1196,
+      "07/11": 651,
+      "07/12": 502,
+      "07/13": 268,
+      "07/14": 110
+    }
+  },
+  {
+    "rank": 34,
+    "id": "39666",
+    "name": "中華職棒37年Rakuten主場例行賽 小周末套票＿周三版",
+    "cat": "sports",
+    "pv": 12112,
+    "pvByDate": {
+      "06/10": 121,
+      "06/11": 147,
+      "06/15": 153,
+      "06/16": 168,
+      "06/17": 119,
+      "06/18": 164,
+      "06/19": 122,
+      "06/20": 209,
+      "06/21": 195,
+      "06/22": 511,
+      "06/23": 823,
+      "06/24": 950,
+      "06/25": 1078,
+      "06/26": 1227,
+      "06/27": 1305,
+      "06/28": 546,
+      "06/29": 397,
+      "06/30": 230,
+      "07/01": 193,
+      "07/02": 174,
+      "07/03": 165,
+      "07/04": 146,
+      "07/05": 157,
+      "07/06": 182,
+      "07/07": 211,
+      "07/08": 163,
+      "07/09": 172,
+      "07/10": 147,
+      "07/11": 224,
+      "07/12": 161,
+      "07/13": 410,
+      "07/14": 465,
+      "07/15": 398,
+      "07/16": 159,
+      "07/17": 120
+    }
+  },
+  {
+    "rank": 35,
+    "id": "39005",
+    "name": "2025年台灣精品中華職棒明星對抗賽",
+    "cat": "sports",
+    "pv": 11711,
+    "pvByDate": {
+      "06/10": 159,
+      "06/11": 150,
+      "06/12": 116,
+      "06/13": 163,
+      "06/14": 162,
+      "06/15": 251,
+      "06/16": 275,
+      "06/17": 259,
+      "06/18": 354,
+      "06/19": 286,
+      "06/20": 224,
+      "06/21": 273,
+      "06/22": 2334,
+      "06/23": 508,
+      "06/24": 6071,
+      "06/25": 126
+    }
+  },
+  {
+    "rank": 36,
+    "id": "39453",
+    "name": "TPE48－RESET公演",
+    "cat": "concert",
+    "pv": 11380,
+    "pvByDate": {
+      "06/10": 164,
+      "06/11": 124,
+      "06/12": 110,
+      "06/13": 108,
+      "06/17": 105,
+      "06/26": 146,
+      "06/28": 159,
+      "06/30": 6558,
+      "07/01": 567,
+      "07/02": 322,
+      "07/03": 300,
+      "07/04": 242,
+      "07/05": 200,
+      "07/06": 279,
+      "07/07": 243,
+      "07/08": 262,
+      "07/09": 235,
+      "07/10": 255,
+      "07/11": 115,
+      "07/12": 148,
+      "07/13": 121,
+      "07/16": 128,
+      "07/17": 337,
+      "07/18": 152
+    }
+  },
+  {
+    "rank": 37,
+    "id": "39692",
+    "name": "《暗喻幻想》Metaphor：ReFantazio 交響音樂會",
+    "cat": "concert",
+    "pv": 10853,
+    "pvByDate": {
+      "06/18": 669,
+      "06/19": 752,
+      "06/20": 688,
+      "06/21": 538,
+      "06/22": 546,
+      "06/23": 699,
+      "06/24": 3736,
+      "06/25": 1367,
+      "06/26": 341,
+      "06/27": 585,
+      "06/28": 241,
+      "06/29": 388,
+      "06/30": 193,
+      "07/03": 110
+    }
+  },
+  {
+    "rank": 38,
+    "id": "39649",
+    "name": "Girl Rules Fan Meeting in Taipei",
+    "cat": "kpop",
+    "pv": 10601,
+    "pvByDate": {
+      "06/10": 541,
+      "06/11": 549,
+      "06/12": 338,
+      "06/13": 329,
+      "06/14": 309,
+      "06/15": 424,
+      "06/16": 404,
+      "06/17": 519,
+      "06/18": 814,
+      "06/19": 450,
+      "06/20": 700,
+      "06/21": 323,
+      "06/22": 291,
+      "06/23": 269,
+      "06/24": 351,
+      "06/25": 158,
+      "06/26": 109,
+      "06/27": 105,
+      "06/29": 127,
+      "06/30": 124,
+      "07/02": 106,
+      "07/03": 116,
+      "07/04": 153,
+      "07/05": 157,
+      "07/06": 322,
+      "07/07": 201,
+      "07/08": 166,
+      "07/09": 175,
+      "07/10": 140,
+      "07/11": 175,
+      "07/12": 424,
+      "07/13": 161,
+      "07/14": 107,
+      "07/15": 122,
+      "07/16": 164,
+      "07/17": 185,
+      "07/18": 128,
+      "07/19": 113,
+      "07/20": 124,
+      "07/21": 128
+    }
+  },
+  {
+    "rank": 39,
+    "id": "39752",
+    "name": "TPE48 演唱會《New Chapter》",
+    "cat": "concert",
+    "pv": 9489,
+    "pvByDate": {
+      "07/09": 229,
+      "07/10": 4889,
+      "07/11": 492,
+      "07/12": 456,
+      "07/13": 1911,
+      "07/14": 375,
+      "07/15": 201,
+      "07/16": 140,
+      "07/17": 183,
+      "07/18": 197,
+      "07/19": 113,
+      "07/20": 176,
+      "07/21": 127
+    }
+  },
+  {
+    "rank": 40,
+    "id": "39678",
+    "name": "2026 KIM JI WOONG FANMEETING 〔TAKE 1： Unique Story〕 in TAIPEI",
+    "cat": "kpop",
+    "pv": 8483,
+    "pvByDate": {
+      "06/10": 857,
+      "06/11": 497,
+      "06/12": 399,
+      "06/13": 334,
+      "06/14": 269,
+      "06/15": 281,
+      "06/16": 1080,
+      "06/17": 565,
+      "06/18": 477,
+      "06/19": 332,
+      "06/20": 366,
+      "06/21": 304,
+      "06/22": 240,
+      "06/23": 193,
+      "06/24": 1184,
+      "06/25": 467,
+      "06/26": 143,
+      "06/27": 102,
+      "07/10": 113,
+      "07/17": 165,
+      "07/18": 115
+    }
+  },
+  {
+    "rank": 41,
+    "id": "39549",
+    "name": "2026 YANG YOSEOP SOLO CONCERT ＜Fade In＞ IN TAIPEI",
+    "cat": "kpop",
+    "pv": 8039,
+    "pvByDate": {
+      "06/10": 108,
+      "06/11": 132,
+      "06/12": 246,
+      "06/13": 203,
+      "06/15": 130,
+      "06/16": 125,
+      "06/17": 109,
+      "06/22": 109,
+      "06/23": 122,
+      "06/24": 155,
+      "06/25": 190,
+      "06/26": 238,
+      "06/27": 240,
+      "06/28": 133,
+      "06/29": 115,
+      "06/30": 144,
+      "07/01": 138,
+      "07/02": 116,
+      "07/03": 125,
+      "07/04": 173,
+      "07/05": 176,
+      "07/06": 196,
+      "07/07": 175,
+      "07/08": 167,
+      "07/09": 121,
+      "07/10": 188,
+      "07/11": 193,
+      "07/12": 297,
+      "07/13": 269,
+      "07/14": 259,
+      "07/15": 243,
+      "07/16": 192,
+      "07/17": 238,
+      "07/18": 150,
+      "07/19": 245,
+      "07/20": 1233,
+      "07/21": 646
+    }
+  },
+  {
+    "rank": 42,
+    "id": "39490",
+    "name": "《女神異聞錄 5》Persona 5 Special Big Band Concert",
+    "cat": "anime",
+    "pv": 7294,
+    "pvByDate": {
+      "06/10": 170,
+      "06/11": 166,
+      "06/12": 300,
+      "06/13": 230,
+      "06/14": 207,
+      "06/15": 220,
+      "06/16": 161,
+      "06/17": 207,
+      "06/18": 220,
+      "06/19": 212,
+      "06/20": 251,
+      "06/21": 288,
+      "06/22": 452,
+      "06/23": 479,
+      "06/24": 616,
+      "06/25": 1058,
+      "06/26": 2057
+    }
+  },
+  {
+    "rank": 43,
+    "id": "39527",
+    "name": "Jane Yeh Birthday Tour 2026 in Taipei ",
+    "cat": "concert",
+    "pv": 5509,
+    "pvByDate": {
+      "06/10": 102,
+      "06/11": 216,
+      "06/12": 4834,
+      "06/13": 357
+    }
+  },
+  {
+    "rank": 44,
+    "id": "39753",
+    "name": "2026年福爾摩沙女子排球國際邀請賽",
+    "cat": "concert",
+    "pv": 5122,
+    "pvByDate": {
+      "07/10": 356,
+      "07/11": 1763,
+      "07/12": 756,
+      "07/13": 545,
+      "07/14": 499,
+      "07/15": 351,
+      "07/16": 266,
+      "07/17": 177,
+      "07/18": 130,
+      "07/20": 118,
+      "07/21": 161
+    }
+  },
+  {
+    "rank": 45,
+    "id": "39458",
+    "name": "中華職棒37年Rakuten主場例行賽 動紫三日套票",
+    "cat": "sports",
+    "pv": 4425,
+    "pvByDate": {
+      "06/10": 244,
+      "06/11": 307,
+      "06/12": 241,
+      "06/13": 256,
+      "06/14": 239,
+      "06/15": 358,
+      "06/16": 419,
+      "06/17": 438,
+      "06/18": 672,
+      "06/19": 690,
+      "06/20": 355,
+      "06/21": 206
+    }
+  },
+  {
+    "rank": 46,
+    "id": "39556",
+    "name": "2026 春魚創意 3D Live《NEXUS 虛實之側》—＜Echo／迴響＞",
+    "cat": "anime",
+    "pv": 4347,
+    "pvByDate": {
+      "06/10": 107,
+      "06/11": 248,
+      "06/12": 245,
+      "06/13": 353,
+      "06/14": 370,
+      "06/15": 436,
+      "06/16": 435,
+      "06/17": 412,
+      "06/18": 568,
+      "06/19": 1173
+    }
+  },
+  {
+    "rank": 47,
+    "id": "39555",
+    "name": "2026 春魚創意 3D／2D Live《NEXUS 虛實之側》—＜Threshold／臨界＞",
+    "cat": "anime",
+    "pv": 4208,
+    "pvByDate": {
+      "06/10": 132,
+      "06/11": 268,
+      "06/12": 140,
+      "06/13": 156,
+      "06/14": 216,
+      "06/15": 331,
+      "06/16": 343,
+      "06/17": 394,
+      "06/18": 499,
+      "06/19": 930,
+      "06/20": 799
+    }
+  },
+  {
+    "rank": 48,
+    "id": "39746",
+    "name": "瞪鞋偶像RAY ＋ 另類Vocaloid奇才kinoue64台北聯合公演",
+    "cat": "concert",
+    "pv": 3772,
+    "pvByDate": {
+      "07/08": 266,
+      "07/09": 387,
+      "07/10": 866,
+      "07/11": 453,
+      "07/12": 553,
+      "07/13": 229,
+      "07/14": 143,
+      "07/15": 121,
+      "07/16": 136,
+      "07/17": 251,
+      "07/18": 229,
+      "07/19": 138
+    }
+  },
+  {
+    "rank": 49,
+    "id": "39673",
+    "name": "ONE PACT : SUMMER BREEZE in Taipei",
+    "cat": "kpop",
+    "pv": 3381,
+    "pvByDate": {
+      "06/10": 178,
+      "06/11": 171,
+      "06/12": 143,
+      "06/13": 133,
+      "06/14": 119,
+      "06/15": 133,
+      "06/16": 225,
+      "06/17": 960,
+      "06/18": 260,
+      "06/20": 114,
+      "06/24": 192,
+      "06/25": 142,
+      "06/26": 243,
+      "06/27": 368
+    }
+  },
+  {
+    "rank": 50,
+    "id": "39605",
+    "name": "LUCY 9TH CONCERT ＜ISLAND＞ IN TAIPEI",
+    "cat": "kpop",
+    "pv": 3266,
+    "pvByDate": {
+      "06/10": 158,
+      "06/11": 201,
+      "06/12": 172,
+      "06/13": 117,
+      "06/14": 107,
+      "06/15": 183,
+      "06/16": 347,
+      "06/17": 303,
+      "06/18": 341,
+      "06/19": 466,
+      "06/20": 871
+    }
+  },
+  {
+    "rank": 51,
+    "id": "39745",
+    "name": "特典福利加購－EXILE AKIRA 20th ANNIVERSARY SPECIAL LIVE TOUR “URBAN SAVAGE” 台北公演",
+    "cat": "concert",
+    "pv": 2995,
+    "pvByDate": {
+      "07/08": 174,
+      "07/09": 113,
+      "07/10": 232,
+      "07/11": 2238,
+      "07/12": 111,
+      "07/19": 127
+    }
+  },
+  {
+    "rank": 52,
+    "id": "39602",
+    "name": "2026東海岸大地藝術節月光．海音樂會－澎湃的海",
+    "cat": "concert",
+    "pv": 2687,
+    "pvByDate": {
+      "06/21": 207,
+      "06/22": 189,
+      "06/23": 142,
+      "06/24": 151,
+      "06/25": 101,
+      "06/26": 106,
+      "06/27": 125,
+      "06/29": 143,
+      "06/30": 153,
+      "07/01": 133,
+      "07/02": 190,
+      "07/03": 118,
+      "07/04": 123,
+      "07/06": 104,
+      "07/07": 116,
+      "07/16": 102,
+      "07/17": 227,
+      "07/18": 135,
+      "07/20": 122
+    }
+  },
+  {
+    "rank": 53,
+    "id": "39650",
+    "name": "第十七屆兩岸電影展",
+    "cat": "concert",
+    "pv": 2248,
+    "pvByDate": {
+      "06/10": 155,
+      "06/11": 129,
+      "06/12": 145,
+      "06/14": 104,
+      "06/21": 151,
+      "06/22": 328,
+      "06/23": 334,
+      "06/24": 307,
+      "06/25": 272,
+      "06/26": 164,
+      "06/27": 159
+    }
+  },
+  {
+    "rank": 54,
+    "id": "39734",
+    "name": "2026 秋out音樂節",
+    "cat": "concert",
+    "pv": 2103,
+    "pvByDate": {
+      "07/08": 436,
+      "07/09": 341,
+      "07/10": 259,
+      "07/11": 171,
+      "07/12": 308,
+      "07/13": 152,
+      "07/14": 134,
+      "07/15": 132,
+      "07/16": 170
+    }
+  },
+  {
+    "rank": 55,
+    "id": "39619",
+    "name": "COSMOS 1st music concert in Taipei",
+    "cat": "concert",
+    "pv": 1580,
+    "pvByDate": {
+      "07/10": 114,
+      "07/12": 362,
+      "07/13": 141,
+      "07/14": 125,
+      "07/15": 125,
+      "07/16": 146,
+      "07/17": 156,
+      "07/18": 229,
+      "07/19": 182
+    }
+  },
+  {
+    "rank": 56,
+    "id": "38847",
+    "name": "中華職棒36年Rakuten主場例行賽",
+    "cat": "concert",
+    "pv": 1499,
+    "pvByDate": {
+      "06/16": 101,
+      "06/18": 159,
+      "06/19": 170,
+      "06/23": 159,
+      "06/24": 259,
+      "06/25": 160,
+      "06/26": 349,
+      "06/27": 142
+    }
+  },
+  {
+    "rank": 57,
+    "id": "39682",
+    "name": "韓國寶藏音樂人 DDBB 台北演唱會",
+    "cat": "kpop",
+    "pv": 1373,
+    "pvByDate": {
+      "06/10": 215,
+      "06/11": 156,
+      "06/12": 169,
+      "06/13": 119,
+      "06/14": 121,
+      "06/15": 108,
+      "06/24": 113,
+      "06/27": 136,
+      "07/04": 105,
+      "07/10": 131
+    }
+  },
+  {
+    "rank": 58,
+    "id": "38900",
+    "name": "2025蔡琴 不要告別 巡迴演唱會",
+    "cat": "concert",
+    "pv": 447,
+    "pvByDate": {
+      "06/10": 191,
+      "06/16": 256
+    }
+  },
+  {
+    "rank": 59,
+    "id": "39334",
+    "name": "2026 FTISLAND CONCERT ‘FTSODE’ in TAIPEI",
+    "cat": "concert",
+    "pv": 445,
+    "pvByDate": {
+      "06/27": 445
+    }
+  },
+  {
+    "rank": 60,
+    "id": "39195",
+    "name": "QWER 1ST WORLD TOUR ＜ROCKATION＞ in TAIPEI",
+    "cat": "concert",
+    "pv": 374,
+    "pvByDate": {
+      "07/12": 208,
+      "07/13": 166
+    }
+  },
+  {
+    "rank": 61,
+    "id": "39545",
+    "name": "EXILE AKIRA 20th ANNIVERSARY SPECIAL LIVE TOUR “URBAN SAVAGE” 台北公演",
+    "cat": "concert",
+    "pv": 344,
+    "pvByDate": {
+      "07/08": 120,
+      "07/11": 224
+    }
+  },
+  {
+    "rank": 62,
+    "id": "39190",
+    "name": "TPBL冠軍賽　福爾摩沙夢想家主場",
+    "cat": "concert",
+    "pv": 342,
+    "pvByDate": {
+      "06/17": 149,
+      "07/08": 193
+    }
+  },
+  {
+    "rank": 63,
+    "id": "38579",
+    "name": "2024-2025 PLG桃園璞園領航猿主場",
+    "cat": "concert",
+    "pv": 314,
+    "pvByDate": {
+      "06/16": 143,
+      "06/17": 171
+    }
+  },
+  {
+    "rank": 64,
+    "id": "39582",
+    "name": "日本元氣唱作人Tsuji Shion「SUCKER PUNCH」台北站",
+    "cat": "concert",
+    "pv": 130,
+    "pvByDate": {
+      "06/24": 130
+    }
+  },
+  {
+    "rank": 65,
+    "id": "39778",
+    "name": "幽靈書店Ghost Bookstore / 4 Steps ‘Fore the Spiral 首度台北專場",
+    "cat": "concert",
+    "pv": 127,
+    "pvByDate": {
+      "07/21": 127
+    }
+  },
+  {
+    "rank": 66,
+    "id": "39776",
+    "name": "時速36公里首度海外公演 “市民薄明” Tour 追加 台北站",
+    "cat": "concert",
+    "pv": 120,
+    "pvByDate": {
+      "07/21": 120
+    }
+  },
+  {
+    "rank": 67,
+    "id": "38650",
+    "name": "INFINITE 15th ANNIVERSARY CONCERT＜LIMITED EDITION＞IN TAIPEI",
+    "cat": "concert",
+    "pv": 119,
+    "pvByDate": {
+      "07/06": 119
+    }
+  },
+  {
+    "rank": 68,
+    "id": "39655",
+    "name": "東京獨立流行新星 Himeuzu＋名古屋夢幻流行之星 Blurred City Lights 聯合演出台北站",
+    "cat": "concert",
+    "pv": 110,
+    "pvByDate": {
+      "07/13": 110
+    }
+  },
+  {
+    "rank": 69,
+    "id": "37769",
+    "name": "2023 7-ELEVEN高雄啤酒音樂節3.0",
+    "cat": "concert",
+    "pv": 101,
+    "pvByDate": {
+      "07/02": 101
+    }
+  }
+];
+// ── Charts ─────────────────────────────────────────────────────────────────
+const TOTAL = DATA.reduce((s,d) => s + d.pv, 0);
+const CAT_LABEL = { sports:'體育', concert:'演唱會', kpop:'K-pop', anime:'動漫' };
+const CAT_CSS   = { sports:'badge-sports', concert:'badge-concert', kpop:'badge-kpop', anime:'badge-anime' };
+const CAT_COLOR = { sports:'#3b82f6', concert:'#8b5cf6', kpop:'#f43f5e', anime:'#10b981' };
+
+// ── Update time label ──
+if (DAILY.length) {
+  const el = document.getElementById('updateTimeLabel');
+  if (el) el.textContent = DAILY[DAILY.length - 1].date + ' 資料';
+}
+
+// ── Daily Trend Chart ──
+const dailyChartInst = new Chart(document.getElementById('dailyChart'), {
+  type: 'bar',
+  data: {
+    labels: DAILY.map(d => d.date),
+    datasets: [{
+      label: '每日 Page Views',
+      data: DAILY.map(d => d.totalPV),
+      backgroundColor: 'rgba(59,130,246,0.55)',
+      borderColor: '#3b82f6',
+      borderWidth: 2,
+      borderRadius: 6
+    }]
+  },
+  plugins: [ChartDataLabels],
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end', align: 'top',
+        color: '#f1f5f9',
+        font: { size: 12, weight: '700' },
+        formatter: v => v.toLocaleString()
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,.06)' },
+        ticks: { color: '#94a3b8', font: { size: 12 } }
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,.06)' },
+        ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v },
+        beginAtZero: true
+      }
+    },
+    layout: { padding: { top: 24 } }
+  }
+});
+
+// ── Donut Chart ──
+const catTotals = { concert:0, sports:0, kpop:0, anime:0 };
+DATA.forEach(d => { catTotals[d.cat] = (catTotals[d.cat] || 0) + d.pv; });
+const donutChartInst = new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['演唱會/音樂節','棒球/TPBL','K-pop/韓星','動漫/遊戲'],
+    datasets: [{
+      data: [catTotals.concert, catTotals.sports, catTotals.kpop, catTotals.anime],
+      backgroundColor: ['#8b5cf6','#3b82f6','#f43f5e','#10b981'],
+      borderColor: '#1e293b',
+      borderWidth: 3
+    }]
+  },
+  plugins: [ChartDataLabels],
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '62%',
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        color: '#fff', font: { weight: 'bold', size: 11 },
+        formatter: (val) => {
+          const pct = (val / TOTAL * 100).toFixed(1);
+          return pct > 5 ? pct + '%' : '';
+        }
+      }
+    }
+  }
+});
+
+// ── TOP 10 Horizontal Bar ──
+const top10 = DATA.slice(0, 10);
+const top10ChartInst = new Chart(document.getElementById('top10Chart'), {
+  type: 'bar',
+  data: {
+    labels: top10.map(d => d.name.length > 22 ? d.name.slice(0,22)+'…' : d.name),
+    datasets: [{
+      data: top10.map(d => d.pv),
+      backgroundColor: top10.map(d => CAT_COLOR[d.cat] + 'cc'),
+      borderColor: top10.map(d => CAT_COLOR[d.cat]),
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  plugins: [ChartDataLabels],
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end', align: 'end',
+        color: '#94a3b8', font: { size: 10, weight: '600' },
+        formatter: val => val.toLocaleString()
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,.06)' },
+        ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v }
+      },
+      y: { grid: { display: false }, ticks: { color: '#e2e8f0', font: { size: 11 } } }
+    },
+    layout: { padding: { right: 50 } }
+  }
+});
+
+// ── Table ──
+let currentFilter = 'all';
+let sortCol = 3;
+let sortAsc = false;
+let minPv = 0;
+
+// ── Date range state (managed by Flatpickr) ───────────────────────────────
+var selectedFrom = null;
+var selectedTo   = null;
+
+function getRangeDates() {
+  var dates = DAILY.map(function(x){ return x.date; });
+  var from = selectedFrom || dates[0];
+  var to   = selectedTo   || dates[dates.length - 1];
+  var fi = dates.indexOf(from);
+  var ti = dates.indexOf(to);
+  return dates.slice(fi < 0 ? 0 : fi, (ti < 0 ? dates.length - 1 : ti) + 1);
+}
+
+// Init Flatpickr calendars (start / end)
+(function() {
+  var dates = DAILY.map(function(d){ return d.date; });
+  selectedFrom = dates[0] || null;
+  selectedTo   = dates[dates.length - 1] || null;
+  // Build Date objects (local time) to avoid ISO string parsing issues
+  var available = dates.map(function(d) {
+    var p = d.split('/'); return new Date(2026, +p[0] - 1, +p[1]);
+  });
+  function pad(n){ return String(n).padStart(2, '0'); }
+  function mmdd(d){ return pad(d.getMonth()+1) + '/' + pad(d.getDate()); }
+
+  var fpTo;
+  var fpFrom = flatpickr(document.getElementById('dateFrom'), {
+    dateFormat: 'm/d',
+    enable: available,
+    minDate: available[0],
+    maxDate: available[available.length - 1],
+    defaultDate: available[0],
+    onChange: function(sel) {
+      if (!sel.length) return;
+      selectedFrom = mmdd(sel[0]);
+      var fi = dates.indexOf(selectedFrom);
+      if (fpTo) fpTo.set('minDate', available[fi]);
+      if (selectedTo && dates.indexOf(selectedTo) < fi) {
+        selectedTo = selectedFrom;
+        if (fpTo) fpTo.setDate(available[fi], false);
+      }
+      applyFilters();
+    }
+  });
+
+  fpTo = flatpickr(document.getElementById('dateTo'), {
+    dateFormat: 'm/d',
+    enable: available,
+    minDate: available[0],
+    maxDate: available[available.length - 1],
+    defaultDate: available[available.length - 1],
+    onChange: function(sel) {
+      if (!sel.length) return;
+      selectedTo = mmdd(sel[0]);
+      applyFilters();
+    }
+  });
+})();
+
+function applyFilters() {
+  const kw      = document.getElementById('searchInput').value.trim().toLowerCase();
+  const tbody   = document.getElementById('tableBody');
+  const rangeDates = getRangeDates();
+
+  // Pre-compute PV per activity for the selected date range
+  const pvCache = {};
+  DATA.forEach(function(d) {
+    pvCache[d.id] = rangeDates.reduce(function(sum, dt) {
+      return sum + ((d.pvByDate && d.pvByDate[dt]) || 0);
+    }, 0);
+  });
+
+  // Aggregate totals across all categories
+  const allRangePv   = DATA.reduce(function(s, d){ return s + pvCache[d.id]; }, 0);
+  const sportsPv     = DATA.filter(function(d){ return d.cat === 'sports'; }).reduce(function(s,d){ return s + pvCache[d.id]; }, 0);
+  const concertPv    = DATA.filter(function(d){ return d.cat === 'concert'; }).reduce(function(s,d){ return s + pvCache[d.id]; }, 0);
+  const sportsCount  = DATA.filter(function(d){ return d.cat === 'sports'  && pvCache[d.id] > 0; }).length;
+  const concertCount = DATA.filter(function(d){ return d.cat === 'concert' && pvCache[d.id] > 0; }).length;
+  const sortedAll    = DATA.slice().sort(function(a,b){ return pvCache[b.id] - pvCache[a.id]; });
+  const top1         = sortedAll[0];
+  const top5Sum      = sortedAll.slice(0,5).reduce(function(s,d){ return s + pvCache[d.id]; }, 0);
+  const top3Sum      = sortedAll.slice(0,3).reduce(function(s,d){ return s + pvCache[d.id]; }, 0);
+  const activeCount  = DATA.filter(function(d){ return pvCache[d.id] > 0; }).length;
+  const total4pct    = allRangePv || 1;
+
+  // ── Update KPI cards ──
+  document.getElementById('kpi-total').textContent     = allRangePv.toLocaleString();
+  document.getElementById('kpi-total-sub').textContent = rangeDates.length === DAILY.length
+    ? '全部日期' : rangeDates[0] + ' ～ ' + rangeDates[rangeDates.length - 1];
+  document.getElementById('kpi-count').textContent     = activeCount;
+  document.getElementById('kpi-max').textContent       = top1 ? pvCache[top1.id].toLocaleString() : '0';
+  document.getElementById('kpi-max-sub').textContent   = top1 ? (top1.name.length > 16 ? top1.name.slice(0,16)+'…' : top1.name) : '—';
+  document.getElementById('kpi-top5').textContent      = (top5Sum / total4pct * 100).toFixed(1) + '%';
+  document.getElementById('kpi-top5-sub').textContent  = '前 3 名即達 ' + (top3Sum / total4pct * 100).toFixed(1) + '%';
+  document.getElementById('kpi-sports').textContent    = (sportsPv / total4pct * 100).toFixed(1) + '%';
+  document.getElementById('kpi-sports-sub').textContent  = sportsPv.toLocaleString() + ' PV · ' + sportsCount + ' 頁';
+  document.getElementById('kpi-concert').textContent   = (concertPv / total4pct * 100).toFixed(1) + '%';
+  document.getElementById('kpi-concert-sub').textContent = concertPv.toLocaleString() + ' PV · ' + concertCount + ' 頁';
+
+  // ── Update charts ──
+  const catT = { concert:0, sports:0, kpop:0, anime:0 };
+  DATA.forEach(function(d){ catT[d.cat] = (catT[d.cat] || 0) + pvCache[d.id]; });
+  donutChartInst.data.datasets[0].data = [catT.concert, catT.sports, catT.kpop, catT.anime];
+  donutChartInst.options.plugins.datalabels.formatter = function(val) {
+    var pct = (val / total4pct * 100).toFixed(1);
+    return pct > 5 ? pct + '%' : '';
+  };
+  donutChartInst.update();
+
+  var top10items = sortedAll.slice(0, 10);
+  top10ChartInst.data.labels = top10items.map(function(d){ return d.name.length > 22 ? d.name.slice(0,22)+'…' : d.name; });
+  top10ChartInst.data.datasets[0].data            = top10items.map(function(d){ return pvCache[d.id]; });
+  top10ChartInst.data.datasets[0].backgroundColor = top10items.map(function(d){ return CAT_COLOR[d.cat]+'cc'; });
+  top10ChartInst.data.datasets[0].borderColor     = top10items.map(function(d){ return CAT_COLOR[d.cat]; });
+  top10ChartInst.update();
+
+  var rangeDaily = DAILY.filter(function(d){ return rangeDates.indexOf(d.date) !== -1; });
+  dailyChartInst.data.labels              = rangeDaily.map(function(d){ return d.date; });
+  dailyChartInst.data.datasets[0].data   = rangeDaily.map(function(d){ return d.totalPV; });
+  dailyChartInst.update();
+
+  // ── Update table ──
+  var rows = DATA.slice();
+  if (currentFilter !== 'all') rows = rows.filter(function(d){ return d.cat === currentFilter; });
+  if (minPv > 0) rows = rows.filter(function(d){ return pvCache[d.id] >= minPv; });
+  if (kw) rows = rows.filter(function(d){
+    return d.name.toLowerCase().includes(kw) || d.id.toString().includes(kw);
+  });
+  rows.sort(function(a, b) {
+    var va = sortCol === 0 ? a.rank : sortCol === 3 ? pvCache[a.id] : a.id;
+    var vb = sortCol === 0 ? b.rank : sortCol === 3 ? pvCache[b.id] : b.id;
+    return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+  var maxPv = Math.max.apply(null, rows.map(function(d){ return pvCache[d.id]; }).concat([1]));
+  tbody.innerHTML = rows.map(function(d) {
+    var pv      = pvCache[d.id];
+    var rankCls = d.rank === 1 ? 'gold' : d.rank === 2 ? 'silver' : d.rank === 3 ? 'bronze' : '';
+    var pct     = (pv / total4pct * 100).toFixed(1);
+    var barW    = Math.round(pv / maxPv * 200);
+    return '<tr data-cat="' + d.cat + '">' +
+      '<td><span class="rank-num ' + rankCls + '">' + d.rank + '</span></td>' +
+      '<td><div class="act-name">' + d.name + '</div><div class="act-id">ID: ' + d.id + '</div></td>' +
+      '<td><span class="badge ' + CAT_CSS[d.cat] + '">' + CAT_LABEL[d.cat] + '</span></td>' +
+      '<td><span class="pv-num">' + pv.toLocaleString() + '</span></td>' +
+      '<td><div class="pv-bar-wrap"><div class="pv-bar" style="width:' + barW + 'px;background:' + CAT_COLOR[d.cat] + '99;"></div><span class="pv-pct">' + pct + '%</span></div></td>' +
+      '<td style="color:var(--muted);font-size:.8rem;">' + d.id + '</td>' +
+      '</tr>';
+  }).join('');
+  var n = rows.length;
+  document.getElementById('resultCount').textContent = '顯示 ' + n + ' / ' + DATA.length + ' 筆';
+  document.getElementById('tblCount').textContent = '（' + n + ' 筆）';
+}
+
+function filterTable(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-chips .chip').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function setPvMin(min, btn) {
+  minPv = min;
+  document.querySelectorAll('.chip-pv').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function sortTable(col) {
+  const ths = document.querySelectorAll('thead th');
+  ths.forEach(function(th){ th.classList.remove('sort-asc','sort-desc'); });
+  if (sortCol === col) { sortAsc = !sortAsc; }
+  else { sortCol = col; sortAsc = col !== 3; }
+  ths[col].classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+  applyFilters();
+}
+
+applyFilters();
+</script>
+</body>
+</html>
