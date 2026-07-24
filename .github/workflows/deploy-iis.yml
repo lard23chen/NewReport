@@ -1,0 +1,241 @@
+name: Deploy HTML to UAT IIS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-uat-viewreport
+  cancel-in-progress: false
+
+env:
+  APP_NAME: report
+  ZIP_PREFIX: ViewReport
+  VERIFY_FILE: HTML_Report_Catalog.html
+  TARGET_PATH: 'C:\inetpub\releases\report'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: uat
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Prepare deployment names
+        id: naming
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SHA="${GITHUB_SHA::7}"
+          TS=$(TZ='Asia/Taipei' date +'%Y-%m-%d_%H-%M-%S')
+          ZIP_NAME="${ZIP_PREFIX}-uat-${SHA}.zip"
+          S3_FULL="${{ secrets.S3_BUCKET }}"
+          BUCKET="${S3_FULL%%/*}"
+          PREFIX="${S3_FULL#*/}"
+          S3_KEY="${PREFIX}/${TS}/${ZIP_NAME}"
+
+          if [[ -z "$BUCKET" || -z "$PREFIX" || "$BUCKET" == "$PREFIX" ]]; then
+            echo "S3_BUCKET must use the format bucket/prefix." >&2
+            exit 1
+          fi
+
+          echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "bucket=${BUCKET}" >> "$GITHUB_OUTPUT"
+          echo "s3_key=${S3_KEY}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### ViewReport UAT deployment"
+            echo "- Commit: ${GITHUB_SHA}"
+            echo "- IIS path: ${TARGET_PATH}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Package HTML files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PUBLISH_DIR="${RUNNER_TEMP}/publish"
+          ZIP_PATH="${RUNNER_TEMP}/${{ steps.naming.outputs.zip_name }}"
+          mkdir -p "$PUBLISH_DIR"
+
+          while IFS= read -r -d '' FILE; do
+            RELATIVE_PATH="${FILE#./}"
+            mkdir -p "${PUBLISH_DIR}/$(dirname "$RELATIVE_PATH")"
+            cp -- "$FILE" "${PUBLISH_DIR}/${RELATIVE_PATH}"
+          done < <(find . -type f -name '*.html' -not -path './.git/*' -print0)
+
+          test -f "${PUBLISH_DIR}/${VERIFY_FILE}" || {
+            echo "${VERIFY_FILE} was not found in the deployment package." >&2
+            exit 1
+          }
+
+          HTML_COUNT=$(find "$PUBLISH_DIR" -type f -name '*.html' | wc -l)
+          if [[ "$HTML_COUNT" -eq 0 ]]; then
+            echo "No HTML files were found." >&2
+            exit 1
+          fi
+
+          (cd "$PUBLISH_DIR" && zip -qr "$ZIP_PATH" .)
+          echo "Packaged ${HTML_COUNT} HTML files."
+          echo "- HTML files: ${HTML_COUNT}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ZIP size: $(du -h "$ZIP_PATH" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload package to S3
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE="${RUNNER_TEMP}/${{ steps.naming.outputs.zip_name }}"
+          DESTINATION="s3://${{ steps.naming.outputs.bucket }}/${{ steps.naming.outputs.s3_key }}"
+          aws s3 cp "$SOURCE" "$DESTINATION"
+          echo "- S3 package: ${DESTINATION}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Render remote deployment script
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > "${RUNNER_TEMP}/deploy.ps1" <<'PS1'
+          $ErrorActionPreference = "Stop"
+
+          $bucket = "__BUCKET__"
+          $key = "__KEY__"
+          $deployId = "__DEPLOY_ID__"
+          $targetPath = "C:\inetpub\releases\report"
+          $verifyFile = "HTML_Report_Catalog.html"
+          $workPath = Join-Path $env:TEMP "ViewReport-$deployId"
+          $extractPath = Join-Path $workPath "content"
+          $zipPath = Join-Path $workPath "ViewReport.zip"
+
+          try {
+              if (Test-Path -LiteralPath $workPath) {
+                  Remove-Item -LiteralPath $workPath -Recurse -Force
+              }
+              New-Item -ItemType Directory -Path $extractPath -Force | Out-Null
+
+              Read-S3Object -BucketName $bucket -Key $key -File $zipPath | Out-Null
+              if (-not (Test-Path -LiteralPath $zipPath)) {
+                  throw "S3 download failed: s3://$bucket/$key"
+              }
+
+              Expand-Archive -LiteralPath $zipPath -DestinationPath $extractPath -Force
+              if (-not (Test-Path -LiteralPath (Join-Path $extractPath $verifyFile))) {
+                  throw "$verifyFile was not found after extraction."
+              }
+
+              if (-not (Test-Path -LiteralPath $targetPath)) {
+                  New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+              }
+
+              $files = @(Get-ChildItem -LiteralPath $extractPath -File -Recurse)
+              foreach ($file in $files) {
+                  $relativePath = $file.FullName.Substring($extractPath.Length).TrimStart('\')
+                  $destination = Join-Path $targetPath $relativePath
+                  $destinationDirectory = Split-Path -Parent $destination
+
+                  if (-not (Test-Path -LiteralPath $destinationDirectory)) {
+                      New-Item -ItemType Directory -Path $destinationDirectory -Force | Out-Null
+                  }
+
+                  Copy-Item -LiteralPath $file.FullName -Destination $destination -Force
+              }
+
+              if (-not (Test-Path -LiteralPath (Join-Path $targetPath $verifyFile))) {
+                  throw "$verifyFile was not found in the IIS target after copying."
+              }
+
+              Write-Host "Copied $($files.Count) HTML files to $targetPath"
+          }
+          catch {
+              Write-Error "Deployment failed: $($_.Exception.Message)"
+              exit 1
+          }
+          finally {
+              if (Test-Path -LiteralPath $workPath) {
+                  Remove-Item -LiteralPath $workPath -Recurse -Force -ErrorAction SilentlyContinue
+              }
+          }
+          PS1
+
+          sed -i \
+            -e "s|__BUCKET__|${{ steps.naming.outputs.bucket }}|g" \
+            -e "s|__KEY__|${{ steps.naming.outputs.s3_key }}|g" \
+            -e "s|__DEPLOY_ID__|${{ steps.naming.outputs.sha }}|g" \
+            "${RUNNER_TEMP}/deploy.ps1"
+
+      - name: Deploy HTML through SSM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PARAMS=$(jq -n --rawfile script "${RUNNER_TEMP}/deploy.ps1" \
+            '{commands: ($script | split("\n"))}')
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunPowerShellScript" \
+            --comment "Deploy ViewReport ${{ steps.naming.outputs.sha }}" \
+            --parameters "$PARAMS" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "SSM CommandId: ${COMMAND_ID}"
+          STATUS="Pending"
+
+          for ATTEMPT in $(seq 1 60); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+              --query "Status" \
+              --output text 2>/dev/null || echo "Pending")
+
+            case "$STATUS" in
+              Pending|InProgress|Delayed)
+                echo "Attempt ${ATTEMPT}: ${STATUS}; waiting 10 seconds."
+                sleep 10
+                ;;
+              *)
+                break
+                ;;
+            esac
+          done
+
+          echo "--- Remote output ---"
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query "StandardOutputContent" \
+            --output text
+
+          echo "--- Remote errors ---"
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --query "StandardErrorContent" \
+            --output text
+
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "SSM deployment failed with status ${STATUS}." >&2
+            exit 1
+          fi
+
+          {
+            echo "### Deployment completed"
+            echo "- SSM status: ${STATUS}"
+            echo "- IIS path: ${TARGET_PATH}"
+          } >> "$GITHUB_STEP_SUMMARY"
