@@ -1,6 +1,9 @@
 name: Deploy HTML to UAT IIS
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
